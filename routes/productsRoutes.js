@@ -10,4 +10,6 @@ router.post('/new',        productsController.create);
 router.get('/:hash/edit',  productsController.showEdit);
 router.post('/:hash/edit', productsController.update);
 
+
+
 module.exports = router;

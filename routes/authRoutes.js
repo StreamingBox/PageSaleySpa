@@ -1,13 +1,17 @@
+// routes/authRoutes.js
 const express = require('express');
 const router  = express.Router();
 const auth    = require('../controllers/authController');
 
-router.get('/login',    auth.showLogin);
-router.post('/login',   auth.login);
+// Formulario de login
+router.get('/login',  auth.showLogin);
+router.post('/login', auth.login);
 
-router.get('/register', auth.showRegister);
-router.post('/register',auth.register);
+// Registro (si lo usas)
+router.get('/register',  auth.showRegister);
+router.post('/register', auth.register);
 
-router.get('/logout',   auth.logout);
+// Logout — destruye la sesión y vuelve al login
+router.get('/logout', auth.logout);
 
 module.exports = router;
