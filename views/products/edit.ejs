@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Producto</title>
+
+    <link rel="stylesheet" href="/css/styleClients.css">
+    <link rel="stylesheet" href="/css/styleNav.css">
+</head>
+<body>
+
+<nav>
+    <div class="logo">SaleySpa</div>
+    <button id="burger" class="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+    </button>
+
+    <aside id="nav-menu" class="nav-menu">
+        <a href="/">Inicio</a>
+        <a href="/clients">Clientes</a>
+        <a href="/products">Productos</a>
+        <a href="/sales">Ventas</a>
+        <a href="/logout">Salir</a>
+    </aside>
+</nav>
+
+<div class="container">
+    <h1>Editar Producto</h1>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+
+    <form class="form-client" method="post" action="/products/<%= product.hash %>/edit">
+        <div class="form-group">
+            <label>Nombre</label>
+            <input name="name" value="<%= product.name %>" required>
+        </div>
+        <div class="form-group">
+            <label>Precio ($)</label>
+            <input name="price" type="number" step="0.01"
+                   value="<%= Number(product.price).toFixed(2) %>" required>
+        </div>
+        <button class="submit-btn">Actualizar</button>
+    </form>
+
+    <p class="link"><a href="/products">← Volver al listado</a></p>
+</div>
+
+<script>
+    const b=document.getElementById('burger'),m=document.getElementById('nav-menu');
+    b.onclick=()=>{b.classList.toggle('active');m.classList.toggle('active');};
+    document.addEventListener('click',e=>{
+        if(!m.contains(e.target)&&!b.contains(e.target)){b.classList.remove('active');m.classList.remove('active');}
+    });
+</script>
+</body>
+</html>

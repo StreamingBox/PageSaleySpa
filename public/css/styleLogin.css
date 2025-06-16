@@ -1,0 +1,85 @@
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #7b2cbf 0%, #ffffff 100%);
+    font-family: Arial, sans-serif;
+}
+
+/* Container for both forms */
+.container {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 360px;
+    box-sizing: border-box;
+}
+
+/* Title styles */
+h1 {
+    text-align: center;
+    color: #4a0072;
+    margin-bottom: 1.5rem;
+}
+
+/* Error message */
+.error {
+    color: red;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+/* Form layout: vertical stacking */
+.form {
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #4a0072;
+}
+
+.form-group input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Button full width */
+.form-group button {
+    padding: 0.75rem;
+    border: none;
+    background-color: #7b2cbf;
+    color: white;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.form-group button:hover {
+    background-color: #5a1e8a;
+}
+
+/* Link below form */
+.link {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.link a {
+    color: #7b2cbf;
+    text-decoration: none;
+}

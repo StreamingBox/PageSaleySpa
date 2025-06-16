@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Cliente</title>
+
+    <link rel="stylesheet" href="/css/styleClients.css">
+    <link rel="stylesheet" href="/css/styleNav.css">
+</head>
+<body>
+
+<nav>
+    <div class="logo">SaleySpa</div>
+    <button id="burger" class="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+    </button>
+
+    <aside id="nav-menu" class="nav-menu">
+        <a href="/">Inicio</a>
+        <a href="/clients">Listado</a>
+        <a href="/products">Productos</a>
+        <a href="/sales">Ventas</a>
+        <a href="/logout">Salir</a>
+    </aside>
+</nav>
+
+<div class="container">
+    <h1>Editar Cliente</h1>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+
+    <form action="/clients/<%= client.hash %>/edit" method="POST" class="form-client">
+        <div class="form-group">
+            <label>Nombre</label>
+            <input name="name" value="<%= client.name %>" required>
+        </div>
+        <div class="form-group">
+            <label>Teléfono</label>
+            <input name="phone" value="<%= client.phone %>">
+        </div>
+        <div class="form-group">
+            <label>Dirección</label>
+            <input name="address" value="<%= client.address %>">
+        </div>
+        <button class="btn submit-btn">Actualizar</button>
+    </form>
+
+    <p class="link"><a href="/clients">← Volver</a></p>
+</div>
+
+<script>
+    const b = document.getElementById('burger');
+    const m = document.getElementById('nav-menu');
+    b.onclick = ()=>{ b.classList.toggle('active'); m.classList.toggle('active'); };
+    document.addEventListener('click',e=>{
+        if(!m.contains(e.target)&&!b.contains(e.target)){
+            b.classList.remove('active'); m.classList.remove('active');
+        }
+    });
+</script>
+</body>
+</html>

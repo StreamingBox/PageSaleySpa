@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ventas / Servicios</title>
+
+    <link rel="stylesheet" href="/css/styleClients.css">
+    <link rel="stylesheet" href="/css/styleSales.css">
+    <link rel="stylesheet" href="/css/styleNav.css"><!-- menú -->
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <div class="logo">SaleySpa</div>
+
+    <button id="burger" class="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+    </button>
+
+    <aside id="nav-menu" class="nav-menu">
+        <a href="/">Inicio</a>
+        <a href="/clients">Clientes</a>
+        <a href="/products">Productos</a>
+        <a href="/sales">Ventas</a>
+        <a href="/logout">Salir</a>
+    </aside>
+</nav>
+
+<div class="container">
+    <h1>Ventas / Servicios</h1>
+
+    <div class="actions">
+        <a href="/sales/new" class="btn new-client">+ Registrar Venta</a>
+    </div>
+
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+
+    <table class="clients-table sales-table">
+        <thead>
+        <tr><th>Fecha</th><th>Cliente</th><th>Producto</th><th>Precio</th>
+            <th>Estado</th><th>Origen&nbsp;Pago</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+        <% if (!sales.length) { %>
+            <tr><td colspan="7" class="text-center">No hay ventas.</td></tr>
+        <% } else { sales.forEach(s => { %>
+            <tr>
+                <td><%= s.sold_at_fmt %></td>
+                <td><%= s.client_name %></td>
+                <td><%= s.product_name %></td>
+                <td><%= s.price_fmt %></td>
+                <td><%= s.paid_label %></td>
+                <td><%= s.origin_label %></td>
+                <td><a href="/sales/<%= s.id %>/edit" class="edit-btn">Editar</a></td>
+            </tr>
+        <% }) } %>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const b=document.getElementById('burger'),m=document.getElementById('nav-menu');
+    b.onclick=()=>{b.classList.toggle('active');m.classList.toggle('active');};
+    document.addEventListener('click',e=>{
+        if(!m.contains(e.target)&&!b.contains(e.target)){b.classList.remove('active');m.classList.remove('active');}
+    });
+</script>
+</body>
+</html>

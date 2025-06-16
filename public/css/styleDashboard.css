@@ -1,0 +1,44 @@
+.cards {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.card {
+    flex: 1 1 200px;
+    background: #f6f2fd;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.05);
+}
+
+.card .big {
+    font-size: 1.8rem;
+    margin: .3rem 0;
+    font-weight: 700;
+}
+
+.up   { color: #2e7d32; }
+.down { color: #c62828; }
+
+/* ====== selector de fechas en Dashboard ====== */
+.actions .form-group {
+    display:flex; flex-direction:column; margin-right:1.2rem;
+}
+.actions label { font-weight:600; color:#5a0ca1; margin-bottom:4px; }
+
+.actions input[type="date"] {
+    padding:0.45rem 0.6rem;
+    border:1px solid #c3b8d9;
+    border-radius:6px;
+    font-size:1rem;
+    min-width:150px;
+    transition:border .15s ease, box-shadow .15s ease;
+}
+.actions input[type="date"]:focus {
+    border-color:#7d20d5;
+    box-shadow:0 0 0 3px rgba(125,32,213,.12);
+    outline:none;
+}

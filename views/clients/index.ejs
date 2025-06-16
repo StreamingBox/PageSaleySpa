@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Listado de Clientes</title>
+
+    <!-- estilos globales -->
+    <link rel="stylesheet" href="/css/styleClients.css">
+    <link rel="stylesheet" href="/css/styleNav.css"><!-- menú -->
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <div class="logo">SaleySpa</div>
+
+    <button id="burger" class="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+    </button>
+
+    <aside id="nav-menu" class="nav-menu">
+        <a href="/">Inicio</a>
+        <a href="/clients">Clientes</a>
+        <a href="/products">Productos</a>
+        <a href="/sales">Ventas</a>
+        <a href="/logout">Salir</a>
+    </aside>
+</nav>
+
+<div class="container">
+    <h1>Clientes</h1>
+
+    <div class="actions">
+        <!-- Búsqueda -->
+        <form class="search-form" method="get" action="/clients">
+            <input type="text" name="search"
+                   placeholder="Buscar por nombre o teléfono"
+                   value="<%= search %>">
+            <button type="submit">Buscar</button>
+            <a class="clear" href="/clients">&times;</a>
+        </form>
+
+        <a href="/clients/new" class="btn new-client">+ Nuevo Cliente</a>
+    </div>
+
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+
+    <table class="clients-table">
+        <thead>
+        <tr><th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+        <% if (!clients.length) { %>
+            <tr><td colspan="4" class="text-center">No hay clientes.</td></tr>
+        <% } else { clients.forEach(c => { %>
+            <tr>
+                <td><%= c.name %></td>
+                <td><%= c.phone %></td>
+                <td><%= c.address %></td>
+                <td class="text-center">
+                    <a href="/clients/<%= c.hash %>/edit" class="edit-btn">Editar</a>
+                </td>
+            </tr>
+        <% }) } %>
+        </tbody>
+    </table>
+</div>
+
+<!-- script menú -->
+<script>
+    const burger = document.getElementById('burger');
+    const menu   = document.getElementById('nav-menu');
+
+    burger.addEventListener('click', () => {
+        burger.classList.toggle('active');
+        menu.classList.toggle('active');
+    });
+
+    document.addEventListener('click', e=>{
+        if(!menu.contains(e.target) && !burger.contains(e.target)){
+            burger.classList.remove('active');
+            menu.classList.remove('active');
+        }
+    });
+</script>
+</body>
+</html>
