@@ -24,7 +24,7 @@ exports.list = async (req, res) => {
         if (start)     { clauses.push('s.sold_at >= ?'); params.push(start); }
         if (end)       { clauses.push('s.sold_at <= ?'); params.push(end); }
         if (client_id) { clauses.push('s.client_id = ?'); params.push(client_id); }
-        if (paid==='1' || paid==='0') {
+        if (paid === '1' || paid === '0') {
             clauses.push('s.paid = ?'); params.push(paid);
         }
 
@@ -42,7 +42,7 @@ exports.list = async (req, res) => {
             ...r,
             sold_at_fmt    : fmtDate(r.sold_at),
             unit_price_fmt : money(r.unit_price),
-            total_fmt      : money(r.price),      // ahora price es el total
+            total_fmt      : money(r.price),      // precio total ya calculado
             paid_label     : r.paid ? 'Pagado' : 'Pendiente',
             origin_label   : r.paid ? (r.payment_source||'-') : 'Pendiente'
         }));
@@ -55,10 +55,10 @@ exports.list = async (req, res) => {
         });
     } catch (err) {
         console.error('Error loading sales:', err);
-        res.render('sales/index',{
-            sales:[], clients:[],
-            filters:{ start:'',end:'',client_id:'',paid:'' },
-            error:'Error al cargar ventas.'
+        res.render('sales/index', {
+            sales: [], clients: [],
+            filters: { start:'', end:'', client_id:'', paid:'' },
+            error: 'Error al cargar ventas.'
         });
     }
 };
@@ -70,9 +70,9 @@ exports.showNew = async (req, res) => {
         const [products] = await pool.execute('SELECT id,name,price FROM products ORDER BY name');
         res.render('sales/new', {
             sale: {
-                client_id:'', product_id:'', quantity:1,
-                unit_price:0, total_price:0,
-                sold_at:'', paid:0, payment_source:''
+                client_id: '', product_id: '', quantity: 1,
+                unit_price: 0, price: 0,
+                sold_at: '', paid: 0, payment_source: ''
             },
             clients,
             products,
@@ -87,34 +87,32 @@ exports.showNew = async (req, res) => {
 /* ---------------------- CREAR VENTA --------------------------- */
 exports.create = async (req, res) => {
     const {
-        client_id,
-        product_id,
-        quantity,
-        unit_price,
-        total_price,       // <-- ahora lo recibimos del formulario
-        sold_at,
-        paid,
-        payment_source
+        client_id, product_id,
+        quantity, unit_price, price,
+        sold_at, paid, payment_source
     } = req.body;
 
-    if (!client_id || !product_id || !sold_at || !quantity || !unit_price || !total_price) {
+    if (!client_id || !product_id || !sold_at || !quantity) {
         return res.redirect('/sales/new');
     }
+
+    // interpretar pago correctamente
+    const isPaid = paid === '1' ? 1 : 0;
 
     try {
         await pool.execute(
             `INSERT INTO sales
-         (client_id, product_id, quantity, unit_price,
-          price, sold_at, paid, payment_source, active)
+       (client_id, product_id, quantity, unit_price, price,
+        sold_at, paid, payment_source, active)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [
                 client_id,
                 product_id,
-                parseInt(quantity,   10),
+                parseInt(quantity, 10),
                 parseFloat(unit_price),
-                parseFloat(total_price),  // <-- guardamos el total aquí
+                parseFloat(price),
                 sold_at,
-                paid ? 1 : 0,
+                isPaid,
                 payment_source || null
             ]
         );
@@ -152,19 +150,17 @@ exports.showEdit = async (req, res) => {
 exports.update = async (req, res) => {
     const { id } = req.params;
     const {
-        client_id,
-        product_id,
-        quantity,
-        unit_price,
-        total_price,       // <-- también aquí
-        sold_at,
-        paid,
-        payment_source
+        client_id, product_id,
+        quantity, unit_price, price,
+        sold_at, paid, payment_source
     } = req.body;
 
-    if (!client_id || !product_id || !sold_at || !quantity || !unit_price || !total_price) {
+    if (!client_id || !product_id || !sold_at || !quantity) {
         return res.redirect(`/sales/${id}/edit`);
     }
+
+    // interpretar pago correctamente
+    const isPaid = paid === '1' ? 1 : 0;
 
     try {
         await pool.execute(
@@ -173,7 +169,7 @@ exports.update = async (req, res) => {
              product_id     = ?,
              quantity       = ?,
              unit_price     = ?,
-             price          = ?,      -- <-- actualizamos el total
+             price          = ?,
              sold_at        = ?,
              paid           = ?,
              payment_source = ?
@@ -181,11 +177,11 @@ exports.update = async (req, res) => {
             [
                 client_id,
                 product_id,
-                parseInt(quantity,   10),
+                parseInt(quantity,  10),
                 parseFloat(unit_price),
-                parseFloat(total_price),  // <-- total
+                parseFloat(price),
                 sold_at,
-                paid ? 1 : 0,
+                isPaid,
                 payment_source || null,
                 id
             ]
