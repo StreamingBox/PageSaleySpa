@@ -1,9 +1,10 @@
 // routes/homeRoutes.js
-const router = require('express').Router();
-const home   = require('../controllers/homeController');
-const { isAuth } = require('../middleware/auth');
+const express        = require('express');
+const router         = express.Router();
+const { isAuth }     = require('../middleware/auth');
+const homeController = require('../controllers/homeController');
 
-router.get('/',       isAuth, home.dashboard);
-router.get('/export', isAuth, home.exportExcel);
+router.get('/',       isAuth, homeController.dashboard);
+router.get('/export', isAuth, homeController.exportExcel);
 
 module.exports = router;

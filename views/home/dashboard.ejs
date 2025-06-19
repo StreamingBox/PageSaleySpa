@@ -4,21 +4,27 @@
     <meta charset="UTF-8">
     <title>Dashboard</title>
 
-    <!-- Hojas de estilo -->
+    <!-- estilos globales -->
     <link rel="stylesheet" href="/css/styleClients.css">
     <link rel="stylesheet" href="/css/styleDashboard.css">
-    <link rel="stylesheet" href="/css/styleNav.css"><!-- menú -->
+    <link rel="stylesheet" href="/css/styleNav.css">
+
+    <!-- Flatpickr CSS -->
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    >
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css"
+    >
 </head>
 <body>
-
-<!-- ===== NAVBAR ===== -->
 <nav>
     <div class="logo">SaleySpa</div>
-
     <button id="burger" class="hamburger" aria-label="Menú">
         <span></span><span></span><span></span>
     </button>
-
     <aside id="nav-menu" class="nav-menu">
         <a href="/">Inicio</a>
         <a href="/clients">Clientes</a>
@@ -28,59 +34,87 @@
     </aside>
 </nav>
 
-<!-- ===== CONTENIDO ===== -->
 <div class="container">
-    <h1>Resumen General</h1>
+    <h1 class="page-title">Resumen General</h1>
 
-    <!-- ---------- FILTRO DE FECHAS ---------- -->
+    <!-- FILTRO DE FECHAS, CLIENTE y ESTADO DE PAGO -->
     <form class="actions" method="get" action="/">
         <div class="form-group">
             <label>Desde</label>
-            <input type="date" name="start" value="<%= startISO %>" required>
+            <input
+                    type="text"
+                    name="start"
+                    class="date-picker"
+                    value="<%= startFmt %>"
+                    placeholder="dd/mm/yyyy"
+                    required
+                    readonly
+            >
         </div>
         <div class="form-group">
             <label>Hasta</label>
-            <input type="date" name="end" value="<%= endISO %>" required>
+            <input
+                    type="text"
+                    name="end"
+                    class="date-picker"
+                    value="<%= endFmt %>"
+                    placeholder="dd/mm/yyyy"
+                    required
+                    readonly
+            >
         </div>
-        <button class="btn new-client">Filtrar</button>
-
-        <!-- exportar -->
-        <a class="btn new-client"
-           style="background:#5a0ca1;margin-left:.8rem"
-           href="/export?start=<%= startISO %>&end=<%= endISO %>">
-            Exportar&nbsp;Excel
-        </a>
+        <div class="form-group">
+            <label>Cliente</label>
+            <select name="client_id">
+                <option value="">Todos</option>
+                <% clients.forEach(c => { %>
+                    <option value="<%= c.id %>" <%= c.id == clientId ? 'selected' : '' %>>
+                        <%= c.name %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Estado de pago</label>
+            <select name="paid">
+                <option value="">Todos</option>
+                <option value="1" <%= paidFilter==='1' ? 'selected' : '' %>>Pagado</option>
+                <option value="0" <%= paidFilter==='0' ? 'selected' : '' %>>Pendiente</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Filtrar</button>
+        <a
+                class="btn-secondary"
+                href="/export?start=<%= startISO %>&end=<%= endISO %>&client_id=<%= clientId %>&paid=<%= paidFilter %>"
+        >Exportar Excel</a>
     </form>
 
-    <!-- ---------- TARJETAS KPI ---------- -->
+    <!-- TARJETAS KPI -->
     <div class="cards">
         <div class="card">
             <h2>Últimos 30 días</h2>
             <p class="big"><%= lastTotal %></p>
             <p><%= lastCount %> ventas</p>
         </div>
-
         <div class="card">
             <h2>Mes anterior</h2>
             <p class="big"><%= prevTotal %></p>
             <p><%= prevCount %> ventas</p>
         </div>
-
         <div class="card">
             <h2>Comparación</h2>
             <p class="big <%= diff >= 0 ? 'up' : 'down' %>">
                 <% if (pct === 0 && prevTotal === '$0') { %>
-                    —            <!-- cuando no hay periodo anterior -->
+                    —
                 <% } else { %>
                     <%= diff >= 0 ? '▲' : '▼' %> <%= pct %> %
                 <% } %>
             </p>
             <p>vs mes anterior</p>
         </div>
-
     </div>
 
-    <!-- ---------- PENDIENTES ---------- -->
+    <!-- PENDIENTES -->
     <h2>Clientes con saldo pendiente</h2>
     <table class="clients-table">
         <thead>
@@ -92,9 +126,7 @@
         </thead>
         <tbody>
         <% if (!pendings.length) { %>
-            <tr>
-                <td colspan="3" class="text-center">Sin deudas 😊</td>
-            </tr>
+            <tr><td colspan="3" class="text-center">Sin deudas 😊</td></tr>
         <% } else { pendings.forEach(p => { %>
             <tr>
                 <td><%= p.name %></td>
@@ -106,16 +138,24 @@
     </table>
 </div>
 
-<!-- ===== SCRIPT MENÚ ===== -->
+<!-- scripts -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
-    const burger = document.getElementById('burger');
-    const menu = document.getElementById('nav-menu');
+    // Inicializar Flatpickr en los inputs de fecha
+    flatpickr(".date-picker", {
+        locale: "es",
+        dateFormat: "d/m/Y",
+        allowInput: true
+    });
 
+    // togglear menú
+    const burger = document.getElementById('burger'),
+        menu   = document.getElementById('nav-menu');
     burger.addEventListener('click', () => {
         burger.classList.toggle('active');
         menu.classList.toggle('active');
     });
-
     document.addEventListener('click', e => {
         if (!menu.contains(e.target) && !burger.contains(e.target)) {
             burger.classList.remove('active');

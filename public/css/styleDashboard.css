@@ -1,44 +1,153 @@
+/* ============================================================
+   DASHBOARD - estilos generales
+   ============================================================ */
+
+/* Contenedor principal */
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Título principal */
+.page-title {
+    text-align: center;
+    font-size: 2rem;
+    color: #6b00b6;
+    margin-bottom: 1.5rem;
+}
+
+/* ------------------------------------------------------------
+   FORMULARIO DE FILTRO (fechas, cliente, estado)
+   ------------------------------------------------------------ */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+}
+
+.actions .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.actions label {
+    font-weight: 600;
+    color: #5a0ca1;
+    margin-bottom: 0.25rem;
+}
+
+.actions input[type="text"],
+.actions input[type="date"],
+.actions select {
+    border: 1px solid #c3b8d9;
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+    transition: box-shadow .15s ease, border .15s ease;
+}
+
+.actions input:focus,
+.actions select:focus {
+    border-color: #7d20d5;
+    box-shadow: 0 0 0 3px rgba(125,32,213,.12);
+    outline: none;
+}
+
+/* Botones */
+.btn-primary,
+.btn-secondary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color .2s;
+}
+
+.btn-primary {
+    background-color: #6b00b6;
+    color: #fff;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #580090;
+}
+
+.btn-secondary {
+    background-color: #5a0ca1;
+    color: #fff;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #4a088f;
+}
+
+/* ------------------------------------------------------------
+   TARJETAS KPI
+   ------------------------------------------------------------ */
 .cards {
     display: flex;
-    gap: 1rem;
     flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
     margin-bottom: 2rem;
 }
 
 .card {
-    flex: 1 1 200px;
-    background: #f6f2fd;
-    border-radius: 8px;
-    padding: 1rem;
+    background: #f4e6fb;
+    border-radius: 10px;
+    padding: 1.5rem 1rem;
+    flex: 1 1 220px;
     text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.card .big {
-    font-size: 1.8rem;
-    margin: .3rem 0;
+.card h2 {
+    font-size: 1.2rem;
+    color: #5a0ca1;
+    margin-bottom: 0.75rem;
+}
+
+.big {
+    font-size: 2.5rem;
     font-weight: 700;
+    color: #333;
+    margin: 0.25rem 0;
 }
 
-.up   { color: #2e7d32; }
+.up { color: #2e7d32; }
 .down { color: #c62828; }
 
-/* ====== selector de fechas en Dashboard ====== */
-.actions .form-group {
-    display:flex; flex-direction:column; margin-right:1.2rem;
+/* ------------------------------------------------------------
+   TABLA DE PENDIENTES
+   ------------------------------------------------------------ */
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
 }
-.actions label { font-weight:600; color:#5a0ca1; margin-bottom:4px; }
 
-.actions input[type="date"] {
-    padding:0.45rem 0.6rem;
-    border:1px solid #c3b8d9;
-    border-radius:6px;
-    font-size:1rem;
-    min-width:150px;
-    transition:border .15s ease, box-shadow .15s ease;
+.clients-table th,
+.clients-table td {
+    padding: 0.75rem 0.7rem;
+    text-align: left;
+    border-bottom: 1px solid #e0d9ef;
 }
-.actions input[type="date"]:focus {
-    border-color:#7d20d5;
-    box-shadow:0 0 0 3px rgba(125,32,213,.12);
-    outline:none;
+
+.clients-table thead {
+    background: #f4e6fb;
+}
+
+.clients-table tbody tr:nth-child(even) {
+    background: #fcf8ff;
+}
+
+.clients-table td.text-center {
+    text-align: center;
 }

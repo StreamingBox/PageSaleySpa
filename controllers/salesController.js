@@ -1,9 +1,9 @@
-/* controllers/salesController.js */
+// controllers/salesController.js
 const pool = require('../config/db');
 
-/* ------------ helpers (sin dependencias externas) ------------ */
+/* ------------ helpers ------------ */
 const money = n =>
-    '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 });
+    '$ ' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 });
 
 const fmtDate = d =>
     new Date(d).toLocaleDateString('es-CO', {
@@ -14,40 +14,66 @@ const fmtDate = d =>
 
 /* -------------------------- LIST ------------------------------ */
 exports.list = async (req, res) => {
-    const sql = `
-    SELECT s.*, c.name AS client_name, p.name AS product_name
-      FROM sales s
-      JOIN clients  c ON c.id = s.client_id
-      JOIN products p ON p.id = s.product_id
-    ORDER BY s.sold_at DESC
-  `;
     try {
-        const [rows] = await pool.execute(sql);
+        const [clients] = await pool.execute(
+            'SELECT id, name FROM clients ORDER BY name'
+        );
+
+        const { start, end, client_id, paid } = req.query;
+        const clauses = ['s.active = 1'], params = [];
+        if (start)     { clauses.push('s.sold_at >= ?'); params.push(start); }
+        if (end)       { clauses.push('s.sold_at <= ?'); params.push(end); }
+        if (client_id) { clauses.push('s.client_id = ?'); params.push(client_id); }
+        if (paid==='1' || paid==='0') {
+            clauses.push('s.paid = ?'); params.push(paid);
+        }
+
+        const sql = `
+      SELECT s.*, c.name AS client_name, p.name AS product_name
+        FROM sales s
+        JOIN clients c ON c.id = s.client_id
+        JOIN products p ON p.id = s.product_id
+       WHERE ${clauses.join(' AND ')}
+    ORDER BY s.sold_at DESC
+    `;
+        const [rows] = await pool.execute(sql, params);
+
         const sales = rows.map(r => ({
             ...r,
-            sold_at_fmt : fmtDate(r.sold_at),
-            price_fmt   : money(r.price),
-            paid_label  : r.paid ? 'Pagado' : 'Debe',
-
-            origin_label: r.paid
-                ? (r.payment_source || '-')
-                : 'Pendiente'          // o 'En mora'
-
+            sold_at_fmt    : fmtDate(r.sold_at),
+            unit_price_fmt : money(r.unit_price),
+            total_fmt      : money(r.price),      // ahora price es el total
+            paid_label     : r.paid ? 'Pagado' : 'Pendiente',
+            origin_label   : r.paid ? (r.payment_source||'-') : 'Pendiente'
         }));
-        res.render('sales/index', { sales, error: null });
+
+        res.render('sales/index', {
+            sales,
+            clients,
+            filters: { start, end, client_id, paid },
+            error: null
+        });
     } catch (err) {
         console.error('Error loading sales:', err);
-        res.render('sales/index', { sales: [], error: 'Error al cargar ventas.' });
+        res.render('sales/index',{
+            sales:[], clients:[],
+            filters:{ start:'',end:'',client_id:'',paid:'' },
+            error:'Error al cargar ventas.'
+        });
     }
 };
 
 /* --------------------- FORM NUEVA VENTA ----------------------- */
 exports.showNew = async (req, res) => {
     try {
-        const [clients]  = await pool.execute('SELECT id, name FROM clients ORDER BY name');
-        const [products] = await pool.execute('SELECT id, name, price FROM products ORDER BY name');
+        const [clients]  = await pool.execute('SELECT id,name FROM clients ORDER BY name');
+        const [products] = await pool.execute('SELECT id,name,price FROM products ORDER BY name');
         res.render('sales/new', {
-            sale: { client_id:'', product_id:'', sold_at:'', paid:0, payment_source:'' },
+            sale: {
+                client_id:'', product_id:'', quantity:1,
+                unit_price:0, total_price:0,
+                sold_at:'', paid:0, payment_source:''
+            },
             clients,
             products,
             error: null
@@ -60,29 +86,34 @@ exports.showNew = async (req, res) => {
 
 /* ---------------------- CREAR VENTA --------------------------- */
 exports.create = async (req, res) => {
-    const { client_id, product_id, sold_at, paid, payment_source } = req.body;
+    const {
+        client_id,
+        product_id,
+        quantity,
+        unit_price,
+        total_price,       // <-- ahora lo recibimos del formulario
+        sold_at,
+        paid,
+        payment_source
+    } = req.body;
 
-    if (!client_id || !product_id || !sold_at) {
+    if (!client_id || !product_id || !sold_at || !quantity || !unit_price || !total_price) {
         return res.redirect('/sales/new');
     }
 
     try {
-        /* Obtener precio vigente del producto */
-        const [[product]] = await pool.execute(
-            'SELECT price FROM products WHERE id = ? LIMIT 1',
-            [product_id]
-        );
-        if (!product) return res.redirect('/sales/new');
-
         await pool.execute(
             `INSERT INTO sales
-        (client_id, product_id, sold_at, price, paid, payment_source)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+         (client_id, product_id, quantity, unit_price,
+          price, sold_at, paid, payment_source, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [
                 client_id,
                 product_id,
+                parseInt(quantity,   10),
+                parseFloat(unit_price),
+                parseFloat(total_price),  // <-- guardamos el total aquí
                 sold_at,
-                product.price,
                 paid ? 1 : 0,
                 payment_source || null
             ]
@@ -96,22 +127,20 @@ exports.create = async (req, res) => {
 
 /* ------------------- FORM EDITAR VENTA ------------------------ */
 exports.showEdit = async (req, res) => {
-    const { id } = req.params;   // /sales/:id/edit
+    const { id } = req.params;
     try {
         const [[sale]] = await pool.execute(
-            `SELECT s.*, c.id AS client_id, c.name AS client_name,
-              p.id AS product_id, p.name AS product_name
+            `SELECT s.*, c.name AS client_name, p.name AS product_name
          FROM sales s
-         JOIN clients  c ON c.id = s.client_id
+         JOIN clients c ON c.id = s.client_id
          JOIN products p ON p.id = s.product_id
-        WHERE s.id = ?`,
+        WHERE s.id = ? AND s.active = 1`,
             [id]
         );
         if (!sale) return res.redirect('/sales');
 
-        const [clients]  = await pool.execute('SELECT id, name FROM clients ORDER BY name');
-        const [products] = await pool.execute('SELECT id, name, price FROM products ORDER BY name');
-
+        const [clients]  = await pool.execute('SELECT id,name FROM clients ORDER BY name');
+        const [products] = await pool.execute('SELECT id,name,price FROM products ORDER BY name');
         res.render('sales/edit', { sale, clients, products, error: null });
     } catch (err) {
         console.error(err);
@@ -122,30 +151,40 @@ exports.showEdit = async (req, res) => {
 /* ------------------------ ACTUALIZAR -------------------------- */
 exports.update = async (req, res) => {
     const { id } = req.params;
-    const { client_id, product_id, sold_at, paid, payment_source } = req.body;
+    const {
+        client_id,
+        product_id,
+        quantity,
+        unit_price,
+        total_price,       // <-- también aquí
+        sold_at,
+        paid,
+        payment_source
+    } = req.body;
 
-    if (!client_id || !product_id || !sold_at) {
+    if (!client_id || !product_id || !sold_at || !quantity || !unit_price || !total_price) {
         return res.redirect(`/sales/${id}/edit`);
     }
 
     try {
-        /* Precio actualizado del producto seleccionado */
-        const [[product]] = await pool.execute(
-            'SELECT price FROM products WHERE id = ? LIMIT 1',
-            [product_id]
-        );
-        if (!product) return res.redirect(`/sales/${id}/edit`);
-
         await pool.execute(
             `UPDATE sales
-          SET client_id = ?, product_id = ?, sold_at = ?,
-              price = ?, paid = ?, payment_source = ?
-        WHERE id = ?`,
+         SET client_id      = ?,
+             product_id     = ?,
+             quantity       = ?,
+             unit_price     = ?,
+             price          = ?,      -- <-- actualizamos el total
+             sold_at        = ?,
+             paid           = ?,
+             payment_source = ?
+       WHERE id = ? AND active = 1`,
             [
                 client_id,
                 product_id,
+                parseInt(quantity,   10),
+                parseFloat(unit_price),
+                parseFloat(total_price),  // <-- total
                 sold_at,
-                product.price,
                 paid ? 1 : 0,
                 payment_source || null,
                 id
@@ -155,5 +194,17 @@ exports.update = async (req, res) => {
     } catch (err) {
         console.error('Error updating sale:', err);
         res.redirect(`/sales/${id}/edit`);
+    }
+};
+
+/* --------------------- DESACTIVAR (soft delete) --------------- */
+exports.delete = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.execute('UPDATE sales SET active = 0 WHERE id = ?', [id]);
+        res.redirect('/sales');
+    } catch (err) {
+        console.error('Error desactivando la venta:', err);
+        res.redirect('/sales');
     }
 };

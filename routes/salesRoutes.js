@@ -21,4 +21,8 @@ router.get('/:id/edit',      isAuth, salesController.showEdit);
 /* POST /sales/:id/edit – actualizar */
 router.post('/:id/edit',     isAuth, salesController.update);
 
+/* DESACTIVAR VENTA */
+/* POST /sales/:id/delete  – soft delete */
+router.post('/:id/delete',   isAuth, salesController.delete);
+
 module.exports = router;

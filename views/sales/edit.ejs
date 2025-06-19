@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Editar Venta / Servicio</title>
-
-    <link rel="stylesheet" href="/css/styleClients.css">
-    <link rel="stylesheet" href="/css/styleSales.css">
     <link rel="stylesheet" href="/css/styleNav.css">
+    <link rel="stylesheet" href="/css/styleSales.css">
 </head>
 <body>
 
@@ -15,7 +13,6 @@
     <button id="burger" class="hamburger" aria-label="Menú">
         <span></span><span></span><span></span>
     </button>
-
     <aside id="nav-menu" class="nav-menu">
         <a href="/">Inicio</a>
         <a href="/clients">Clientes</a>
@@ -25,30 +22,199 @@
     </aside>
 </nav>
 
-<div class="container">
-    <h1>Editar Venta / Servicio</h1>
-    <% if (error) { %><p class="error"><%= error %></p><% } %>
+<div class="container edit-card">
+    <h1 class="card-title">Editar Venta / Servicio</h1>
 
-    <!-- (el formulario existente se mantiene igual) -->
-    <form class="form-client" method="post" action="/sales/<%= sale.id %>/edit">
-        <!-- … todo tu formulario sin cambios … -->
-        <!-- código omitido por brevedad, es igual al que ya funciona -->
+    <% if (error) { %>
+        <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="post" action="/sales/<%= sale.id %>/edit" class="form-grid">
+        <!-- Cliente -->
+        <div class="form-group">
+            <label for="client_id">Cliente</label>
+            <select name="client_id" id="client_id" required>
+                <% clients.forEach(c => { %>
+                    <option value="<%= c.id %>"
+                            <%= sale.client_id == c.id ? 'selected' : '' %>>
+                        <%= c.name %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+
+        <!-- Producto -->
+        <div class="form-group">
+            <label for="product_id">Producto / Servicio</label>
+            <select name="product_id" id="product_id" required>
+                <% products.forEach(p => { %>
+                    <option
+                            value="<%= p.id %>"
+                            data-price="<%= p.price %>"
+                            <%= sale.product_id == p.id ? 'selected' : '' %>>
+                        <%= p.name %> · $<%= Number(p.price).toLocaleString('es-CO',{minimumFractionDigits:0}) %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+
+        <!-- Cantidad -->
+        <div class="form-group">
+            <label for="quantity">Cantidad</label>
+            <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value="<%= sale.quantity %>"
+                    min="1"
+                    required
+            >
+        </div>
+
+        <!-- Precio unitario -->
+        <div class="form-group">
+            <label>Precio unitario</label>
+            <input
+                    type="text"
+                    id="unit_price_show"
+                    readonly
+                    value="$ <%= Number(sale.unit_price).toLocaleString('es-CO',{minimumFractionDigits:0}) %>"
+            >
+            <input
+                    type="hidden"
+                    id="unit_price"
+                    name="unit_price"
+                    value="<%= sale.unit_price %>"
+            >
+        </div>
+
+        <!-- Precio total -->
+        <div class="form-group">
+            <label>Precio total</label>
+            <input
+                    type="text"
+                    id="total_price_show"
+                    readonly
+                    value="$ <%= Number(sale.unit_price * sale.quantity).toLocaleString('es-CO',{minimumFractionDigits:0}) %>"
+            >
+            <input
+                    type="hidden"
+                    id="total_price"
+                    name="total_price"
+                    value="<%= sale.unit_price * sale.quantity %>"
+            >
+        </div>
+
+        <!-- Fecha -->
+        <div class="form-group">
+            <label for="sold_at">Fecha de venta</label>
+            <input
+                    type="date"
+                    name="sold_at"
+                    id="sold_at"
+                    required
+                    value="<%= new Date(sale.sold_at).toISOString().slice(0,10) %>"
+            />
+        </div>
+
+        <!-- Estado de pago -->
+        <div class="form-group">
+            <label>¿Pagado?</label>
+            <div class="radio-group">
+                <label>
+                    <input
+                            type="radio"
+                            name="paid"
+                            value="1"
+                            <%= sale.paid ? 'checked' : '' %>
+                    /> Sí
+                </label>
+                <label>
+                    <input
+                            type="radio"
+                            name="paid"
+                            value="0"
+                            <%= !sale.paid ? 'checked' : '' %>
+                    /> No
+                </label>
+            </div>
+        </div>
+
+        <!-- Origen de pago -->
+        <div class="form-group">
+            <label for="payment_source">Origen de pago</label>
+            <input
+                    type="text"
+                    name="payment_source"
+                    id="payment_source"
+                    placeholder="Ej. Tarjeta, Efectivo..."
+                    value="<%= sale.payment_source || '' %>"
+                    <%= sale.paid ? '' : 'disabled' %>
+            />
+        </div>
+
+        <!-- Botón -->
+        <div class="form-group full-width">
+            <button type="submit" class="btn">Guardar cambios</button>
+        </div>
     </form>
 
     <p class="link"><a href="/sales">← Volver al listado</a></p>
 </div>
 
-<!-- scripts -->
 <script>
-    // menú
-    const b=document.getElementById('burger'),m=document.getElementById('nav-menu');
-    b.onclick=()=>{b.classList.toggle('active');m.classList.toggle('active');};
-    document.addEventListener('click',e=>{
-        if(!m.contains(e.target)&&!b.contains(e.target)){b.classList.remove('active');m.classList.remove('active');}
+    // Menú hamburguesa
+    const b = document.getElementById('burger'),
+        m = document.getElementById('nav-menu');
+    b.onclick = () => {
+        b.classList.toggle('active');
+        m.classList.toggle('active');
+    };
+    document.addEventListener('click', e => {
+        if (!m.contains(e.target) && !b.contains(e.target)) {
+            b.classList.remove('active');
+            m.classList.remove('active');
+        }
+    });
+
+    // Sincronizar precio unitario y total
+    const productSelect = document.getElementById('product_id');
+    const qtyInput      = document.getElementById('quantity');
+    const upShow        = document.getElementById('unit_price_show');
+    const upHidden      = document.getElementById('unit_price');
+    const tpShow        = document.getElementById('total_price_show');
+    const tpHidden      = document.getElementById('total_price');
+    const paidRadios    = document.querySelectorAll('input[name="paid"]');
+    const sourceInput   = document.getElementById('payment_source');
+
+    function updatePrices() {
+        const opt   = productSelect.selectedOptions[0];
+        const price = opt ? parseFloat(opt.dataset.price) : 0;
+        const qty   = parseInt(qtyInput.value, 10) || 1;
+        // unitario
+        upHidden.value = price;
+        upShow.value   = '$ ' + price.toLocaleString('es-CO');
+        // total
+        const total = price * qty;
+        tpHidden.value = total;
+        tpShow.value   = '$ ' + total.toLocaleString('es-CO');
+    }
+
+    productSelect.addEventListener('change', updatePrices);
+    qtyInput.addEventListener('input', updatePrices);
+    updatePrices();
+
+    // Habilitar/deshabilitar origen de pago
+    paidRadios.forEach(r => {
+        r.addEventListener('change', () => {
+            if (r.value === '0') {
+                sourceInput.disabled = true;
+                sourceInput.value    = '';
+            } else {
+                sourceInput.disabled = false;
+            }
+        });
     });
 </script>
-
-<!-- tu script de sincronizar precio y origen (ya lo tenías) -->
-<script src="/js/sales-edit.js"></script><!-- si lo externalizas -->
 </body>
 </html>

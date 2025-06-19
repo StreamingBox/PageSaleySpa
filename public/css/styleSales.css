@@ -1,10 +1,16 @@
 /* ============================================================
-   FORMULARIOS (ventas/new, ventas/edit)
+   CONTENEDOR PRINCIPAL
    ============================================================ */
 .container {
-    max-width: 900px;                 /* más ancho: deja respirar la tabla */
+    max-width: 1000px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+    overflow-x: hidden;
 }
 
+/* ============================================================
+   FORMULARIOS (ventas/new, ventas/edit)
+   ============================================================ */
 .form-group label {
     color: #5a0ca1;
     font-weight: 600;
@@ -16,8 +22,9 @@
     border-radius: 6px;
     padding: 0.55rem 0.75rem;
     font-size: 1rem;
-    transition: box-shadow .15s ease, border .15s ease;
+    transition: border-color .15s ease, box-shadow .15s ease;
 }
+
 .form-group input:focus,
 .form-group select:focus {
     border-color: #7d20d5;
@@ -25,62 +32,299 @@
     outline: none;
 }
 
-#price_show {
-    background: #f7f7fb;
-    color: #333;
+/* ============================================================
+   BOTONES COMUNES
+   ============================================================ */
+.btn {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .2s;
 }
 
-.submit-btn      { width: 140px; text-align: center; }
-.link            { margin-top: 2rem; }
+.btn-primary {
+    background-color: #6b00b6;
+    color: #fff;
+    border: none;
+}
+.btn-primary:hover {
+    background-color: #580090;
+}
+
+.btn-secondary {
+    background-color: #5a0ca1;
+    color: #fff;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #4a088f;
+}
+
+.btn.new-client {
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   FILTROS (ventas/index)
+   ============================================================ */
+.actions.filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem 1.5rem;
+    align-items: end;
+    margin-bottom: 1.5rem;
+}
+.actions.filters .buttons-group {
+    display: flex;
+    gap: 1rem;
+}
+@media (max-width: 600px) {
+    .actions.filters {
+        grid-template-columns: 1fr;
+    }
+}
 
 /* ============================================================
    TABLA LISTADO DE VENTAS
    ============================================================ */
+.table-wrap {
+    overflow-x: auto;
+}
+
 .sales-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: auto;              /* calcula ancho según contenido      */
+    table-layout: auto;
 }
 
 .sales-table thead {
-    background: #f4e6fb;
+    background-color: #f4e6fb;
 }
+
+.sales-table th,
+.sales-table td {
+    padding: 0.75rem 0.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #ece4f4;
+    font-size: 0.95rem;
+}
+
 .sales-table th {
-    white-space: nowrap;             /* títulos en una línea */
     color: #5a0ca1;
     font-weight: 600;
-    padding: .75rem .7rem;
+    white-space: nowrap;
+}
+
+.sales-table td {
+    white-space: nowrap;
+}
+
+.sales-table td:nth-child(3) {
+    white-space: normal; /* permitir envolver texto */
+}
+
+/* filas alternas y hover */
+.sales-table tbody tr:nth-child(even) {
+    background-color: #fcf8ff;
+}
+.sales-table tbody tr:hover {
+    background-color: #f0e6f9;
+}
+
+/* utilidades de alineación */
+.text-center {
     text-align: center;
 }
-
-/* celdas – sin cortes raros */
-.sales-table td {
-    padding: .65rem .7rem;
-    vertical-align: middle;
-    white-space: nowrap;             /* evita 25/06/ 2025 ó $90.0 00       */
+.text-right {
+    text-align: right;
 }
 
-/* solo la columna “Producto” puede envolver */
-.sales-table td:nth-child(3) {
-    white-space: normal;
+/* anchos mínimos para columnas clave */
+.sales-table th:nth-child(1),
+.sales-table td:nth-child(1) {
+    min-width: 90px;    /* Fecha */
+}
+.sales-table th:nth-child(4),
+.sales-table td:nth-child(4) {
+    min-width: 70px;    /* Cantidad */
+}
+.sales-table th:nth-child(5),
+.sales-table td:nth-child(5),
+.sales-table th:nth-child(6),
+.sales-table td:nth-child(6) {
+    min-width: 100px;   /* Montos */
+}
+.sales-table th:nth-child(9),
+.sales-table td:nth-child(9) {
+    min-width: 140px;   /* Acciones */
 }
 
-.sales-table tbody tr:nth-child(even) { background: #fcf8ff; }
-.sales-table tbody tr:hover           { background: #f0e6f9; }
-
-/* centra columnas cortas */
-.sales-table td:nth-child(1), /* Fecha   */
-.sales-table td:nth-child(4), /* Precio  */
-.sales-table td:nth-child(5), /* Estado  */
-.sales-table td:nth-child(7)  /* Acciones*/
-{ text-align: center; }
-
-/* botón Editar compacto, no desborda */
+/* ============================================================
+   BOTONES EN TABLA
+   ============================================================ */
 .edit-btn {
     display: inline-block;
-    min-width: 64px;
-    padding: .35rem .8rem;
-    font-size: .85rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #6b00b6;
     border-radius: 4px;
+    color: #6b00b6;
+    background: transparent;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color .2s, color .2s;
+}
+.edit-btn:hover {
+    background-color: #6b00b6;
+    color: #fff;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.delete-btn {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    color: #fff;
+    background-color: #d32f2f;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color .2s;
+}
+.delete-btn:hover {
+    background-color: #b71c1c;
+}
+
+/* ============================================================
+   FORMULARIO EDITAR COMO TARJETA
+   ============================================================ */
+.edit-card {
+    max-width: 700px;
+    margin: 2rem auto;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.edit-card .card-title {
+    font-size: 1.75rem;
+    color: #6b00b6;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+}
+
+.form-grid .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.radio-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+.radio-group label {
+    font-weight: 400;
+}
+
+.full-width {
+    display: flex;
+    justify-content: center;
+}
+
+.edit-card .link {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+.edit-card .link a {
+    color: #6b00b6;
+    text-decoration: none;
+    font-weight: 500;
+}
+.edit-card .link a:hover {
+    text-decoration: underline;
+}
+/* ============================================================
+   BOTONES “Filtrar” y “Limpiar” (dentro de .actions)
+   ============================================================ */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.actions .form-group {
+    flex: 1 1 180px;
+}
+
+/* contenedor para agrupar ambos botones juntos */
+.actions .filter-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+/* estilos comunes */
+.btn-primary,
+.btn-secondary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color .2s;
     white-space: nowrap;
+}
+
+/* Filtrar */
+.btn-primary {
+    background-color: #6b00b6;
+    color: #fff;
+    border: none;
+}
+.btn-primary:hover {
+    background-color: #580090;
+}
+
+/* Limpiar */
+.btn-secondary {
+    background-color: #5a0ca1;
+    color: #fff;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #4a088f;
+}
+
+/* en pantallas pequeñas, apilar botones al 100% */
+@media (max-width: 600px) {
+    .actions {
+        flex-direction: column;
+    }
+
+    .actions .filter-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-buttons .btn-primary,
+    .filter-buttons .btn-secondary {
+        width: 100%;
+    }
 }
