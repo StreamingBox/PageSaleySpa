@@ -15,19 +15,24 @@ const fmtDate = d =>
 /* -------------------------- LIST ------------------------------ */
 exports.list = async (req, res) => {
     try {
+        // 1) Traer lista de clientes para el filtro
         const [clients] = await pool.execute(
             'SELECT id, name FROM clients ORDER BY name'
         );
 
+        // 2) Leer filtros
         const { start, end, client_id, paid } = req.query;
-        const clauses = ['s.active = 1'], params = [];
+        const clauses = ['s.active = 1'];
+        const params = [];
         if (start)     { clauses.push('s.sold_at >= ?'); params.push(start); }
         if (end)       { clauses.push('s.sold_at <= ?'); params.push(end); }
         if (client_id) { clauses.push('s.client_id = ?'); params.push(client_id); }
         if (paid === '1' || paid === '0') {
-            clauses.push('s.paid = ?'); params.push(paid);
+            clauses.push('s.paid = ?');
+            params.push(paid);
         }
 
+        // 3) Consulta
         const sql = `
       SELECT s.*, c.name AS client_name, p.name AS product_name
         FROM sales s
@@ -38,15 +43,17 @@ exports.list = async (req, res) => {
     `;
         const [rows] = await pool.execute(sql, params);
 
+        // 4) Formatear resultados
         const sales = rows.map(r => ({
             ...r,
             sold_at_fmt    : fmtDate(r.sold_at),
             unit_price_fmt : money(r.unit_price),
-            total_fmt      : money(r.price),      // precio total ya calculado
+            total_fmt      : money(r.unit_price * r.quantity),
             paid_label     : r.paid ? 'Pagado' : 'Pendiente',
-            origin_label   : r.paid ? (r.payment_source||'-') : 'Pendiente'
+            origin_label   : r.paid ? (r.payment_source || '-') : 'Pendiente'
         }));
 
+        // 5) Renderizar vista
         res.render('sales/index', {
             sales,
             clients,
@@ -56,8 +63,9 @@ exports.list = async (req, res) => {
     } catch (err) {
         console.error('Error loading sales:', err);
         res.render('sales/index', {
-            sales: [], clients: [],
-            filters: { start:'', end:'', client_id:'', paid:'' },
+            sales: [],
+            clients: [],
+            filters: { start: '', end: '', client_id: '', paid: '' },
             error: 'Error al cargar ventas.'
         });
     }
@@ -66,13 +74,18 @@ exports.list = async (req, res) => {
 /* --------------------- FORM NUEVA VENTA ----------------------- */
 exports.showNew = async (req, res) => {
     try {
-        const [clients]  = await pool.execute('SELECT id,name FROM clients ORDER BY name');
-        const [products] = await pool.execute('SELECT id,name,price FROM products ORDER BY name');
+        const [clients]  = await pool.execute('SELECT id, name FROM clients ORDER BY name');
+        const [products] = await pool.execute('SELECT id, name, price FROM products ORDER BY name');
         res.render('sales/new', {
             sale: {
-                client_id: '', product_id: '', quantity: 1,
-                unit_price: 0, price: 0,
-                sold_at: '', paid: 0, payment_source: ''
+                client_id: '',
+                product_id: '',
+                quantity: 1,
+                unit_price: 0,
+                price: 0,
+                sold_at: '',
+                paid: 0,
+                payment_source: ''
             },
             clients,
             products,
@@ -87,16 +100,20 @@ exports.showNew = async (req, res) => {
 /* ---------------------- CREAR VENTA --------------------------- */
 exports.create = async (req, res) => {
     const {
-        client_id, product_id,
-        quantity, unit_price, price,
-        sold_at, paid, payment_source
+        client_id,
+        product_id,
+        quantity,
+        unit_price,
+        price,
+        sold_at,
+        paid,
+        payment_source
     } = req.body;
 
     if (!client_id || !product_id || !sold_at || !quantity) {
         return res.redirect('/sales/new');
     }
 
-    // interpretar pago correctamente
     const isPaid = paid === '1' ? 1 : 0;
 
     try {
@@ -137,8 +154,8 @@ exports.showEdit = async (req, res) => {
         );
         if (!sale) return res.redirect('/sales');
 
-        const [clients]  = await pool.execute('SELECT id,name FROM clients ORDER BY name');
-        const [products] = await pool.execute('SELECT id,name,price FROM products ORDER BY name');
+        const [clients]  = await pool.execute('SELECT id, name FROM clients ORDER BY name');
+        const [products] = await pool.execute('SELECT id, name, price FROM products ORDER BY name');
         res.render('sales/edit', { sale, clients, products, error: null });
     } catch (err) {
         console.error(err);
@@ -150,16 +167,20 @@ exports.showEdit = async (req, res) => {
 exports.update = async (req, res) => {
     const { id } = req.params;
     const {
-        client_id, product_id,
-        quantity, unit_price, price,
-        sold_at, paid, payment_source
+        client_id,
+        product_id,
+        quantity,
+        unit_price,
+        price,
+        sold_at,
+        paid,
+        payment_source
     } = req.body;
 
     if (!client_id || !product_id || !sold_at || !quantity) {
         return res.redirect(`/sales/${id}/edit`);
     }
 
-    // interpretar pago correctamente
     const isPaid = paid === '1' ? 1 : 0;
 
     try {
@@ -177,7 +198,7 @@ exports.update = async (req, res) => {
             [
                 client_id,
                 product_id,
-                parseInt(quantity,  10),
+                parseInt(quantity, 10),
                 parseFloat(unit_price),
                 parseFloat(price),
                 sold_at,
