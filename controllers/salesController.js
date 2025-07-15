@@ -34,13 +34,13 @@ exports.list = async (req, res) => {
 
         // 3) Consulta
         const sql = `
-      SELECT s.*, c.name AS client_name, p.name AS product_name
-        FROM sales s
-        JOIN clients c ON c.id = s.client_id
-        JOIN products p ON p.id = s.product_id
-       WHERE ${clauses.join(' AND ')}
-    ORDER BY s.sold_at DESC
-    `;
+            SELECT s.*, c.name AS client_name, p.name AS product_name
+            FROM sales s
+            JOIN clients c ON c.id = s.client_id
+            JOIN products p ON p.id = s.product_id
+            WHERE ${clauses.join(' AND ')}
+            ORDER BY s.sold_at DESC
+        `;
         const [rows] = await pool.execute(sql, params);
 
         // 4) Formatear resultados
@@ -48,7 +48,7 @@ exports.list = async (req, res) => {
             ...r,
             sold_at_fmt    : fmtDate(r.sold_at),
             unit_price_fmt : money(r.unit_price),
-            total_fmt      : money(r.unit_price * r.quantity),
+            total_fmt      : money(r.price), // <-- usar la columna price directa
             paid_label     : r.paid ? 'Pagado' : 'Pendiente',
             origin_label   : r.paid ? (r.payment_source || '-') : 'Pendiente'
         }));
@@ -104,7 +104,7 @@ exports.create = async (req, res) => {
         product_id,
         quantity,
         unit_price,
-        price,
+        total_price, // Cambiado para coincidir con el formulario
         sold_at,
         paid,
         payment_source
@@ -115,22 +115,30 @@ exports.create = async (req, res) => {
     }
 
     const isPaid = paid === '1' ? 1 : 0;
+    const qty = parseInt(quantity, 10);
+    const unit = parseFloat(unit_price);
+    let total = parseFloat(total_price);
+
+    // ✅ Si total_price no llegó o es 0, calcularlo en backend
+    if (isNaN(total) || total === 0) {
+        total = unit * qty;
+    }
 
     try {
         await pool.execute(
             `INSERT INTO sales
-       (client_id, product_id, quantity, unit_price, price,
-        sold_at, paid, payment_source, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+             (client_id, product_id, quantity, unit_price, price,
+              sold_at, paid, payment_source, active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [
                 client_id,
                 product_id,
-                parseInt(quantity, 10),
-                parseFloat(unit_price),
-                parseFloat(price),
+                qty,
+                unit,
+                total, // ✅ Guardar total correcto
                 sold_at,
                 isPaid,
-                payment_source || null
+                isPaid ? (payment_source || 'PENDIENTE') : 'PENDIENTE'
             ]
         );
         res.redirect('/sales');
@@ -146,10 +154,10 @@ exports.showEdit = async (req, res) => {
     try {
         const [[sale]] = await pool.execute(
             `SELECT s.*, c.name AS client_name, p.name AS product_name
-         FROM sales s
-         JOIN clients c ON c.id = s.client_id
-         JOIN products p ON p.id = s.product_id
-        WHERE s.id = ? AND s.active = 1`,
+             FROM sales s
+             JOIN clients c ON c.id = s.client_id
+             JOIN products p ON p.id = s.product_id
+             WHERE s.id = ? AND s.active = 1`,
             [id]
         );
         if (!sale) return res.redirect('/sales');
@@ -171,7 +179,7 @@ exports.update = async (req, res) => {
         product_id,
         quantity,
         unit_price,
-        price,
+        total_price, // Cambiado para coincidir con el formulario
         sold_at,
         paid,
         payment_source
@@ -182,28 +190,35 @@ exports.update = async (req, res) => {
     }
 
     const isPaid = paid === '1' ? 1 : 0;
+    const qty = parseInt(quantity, 10);
+    const unit = parseFloat(unit_price);
+    let total = parseFloat(total_price);
+
+    if (isNaN(total) || total === 0) {
+        total = unit * qty;
+    }
 
     try {
         await pool.execute(
             `UPDATE sales
-         SET client_id      = ?,
-             product_id     = ?,
-             quantity       = ?,
-             unit_price     = ?,
-             price          = ?,
-             sold_at        = ?,
-             paid           = ?,
-             payment_source = ?
-       WHERE id = ? AND active = 1`,
+             SET client_id      = ?,
+                 product_id     = ?,
+                 quantity       = ?,
+                 unit_price     = ?,
+                 price          = ?,
+                 sold_at        = ?,
+                 paid           = ?,
+                 payment_source = ?
+             WHERE id = ? AND active = 1`,
             [
                 client_id,
                 product_id,
-                parseInt(quantity, 10),
-                parseFloat(unit_price),
-                parseFloat(price),
+                qty,
+                unit,
+                total, // ✅ Guardar total correcto
                 sold_at,
                 isPaid,
-                payment_source || null,
+                isPaid ? (payment_source || 'PENDIENTE') : 'PENDIENTE',
                 id
             ]
         );

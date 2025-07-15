@@ -78,8 +78,8 @@
             <label>Estado de pago</label>
             <select name="paid">
                 <option value="">Todos</option>
-                <option value="1" <%= paidFilter==='1' ? 'selected' : '' %>>Pagado</option>
-                <option value="0" <%= paidFilter==='0' ? 'selected' : '' %>>Pendiente</option>
+                <option value="1" <%= paidFilter === '1' ? 'selected' : '' %>>Pagado</option>
+                <option value="0" <%= paidFilter === '0' ? 'selected' : '' %>>Pendiente</option>
             </select>
         </div>
         <button type="submit" class="btn-primary">Filtrar</button>
@@ -93,12 +93,24 @@
     <div class="cards">
         <div class="card">
             <h2>Últimos 30 días</h2>
-            <p class="big"><%= lastTotal %></p>
+            <p class="big">
+                <% if (lastCount > 0) { %>
+                    <%= lastTotal %>
+                <% } else { %>
+                    $0
+                <% } %>
+            </p>
             <p><%= lastCount %> ventas</p>
         </div>
         <div class="card">
             <h2>Mes anterior</h2>
-            <p class="big"><%= prevTotal %></p>
+            <p class="big">
+                <% if (prevCount > 0) { %>
+                    <%= prevTotal %>
+                <% } else { %>
+                    $0
+                <% } %>
+            </p>
             <p><%= prevCount %> ventas</p>
         </div>
         <div class="card">
@@ -142,16 +154,14 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
-    // Inicializar Flatpickr en los inputs de fecha
     flatpickr(".date-picker", {
         locale: "es",
         dateFormat: "d/m/Y",
         allowInput: true
     });
 
-    // togglear menú
-    const burger = document.getElementById('burger'),
-        menu   = document.getElementById('nav-menu');
+    const burger = document.getElementById('burger');
+    const menu   = document.getElementById('nav-menu');
     burger.addEventListener('click', () => {
         burger.classList.toggle('active');
         menu.classList.toggle('active');
