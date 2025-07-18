@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="/css/styleDashboard.css">
     <link rel="stylesheet" href="/css/styleNav.css">
 
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#5a0ca1">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     <!-- Flatpickr CSS -->
     <link
             rel="stylesheet"
@@ -139,7 +146,7 @@
     </table>
 </div>
 
-<!-- scripts -->
+<!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
@@ -148,6 +155,15 @@
         dateFormat: "d/m/Y",
         allowInput: true
     });
+
+    // Registrar el Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('SW registrado:', reg.scope))
+                .catch(err => console.error('Error al registrar SW:', err));
+        });
+    }
 </script>
 </body>
 </html>
