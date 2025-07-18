@@ -174,11 +174,12 @@ exports.exportExcel = async (req, res) => {
             { header: 'Cliente', key: 'Cliente', width: 25 },
             { header: 'Producto', key: 'Producto', width: 30 },
             { header: 'Cantidad', key: 'Cantidad', width: 10 },
-            { header: 'Precio', key: 'Precio', width: 12 },
-            { header: 'Estado', key: 'Estado', width: 12 },
-            { header: 'Origen', key: 'Origen', width: 20 }
+            { header: 'Precio',   key: 'Precio',   width: 12 },
+            { header: 'Estado',   key: 'Estado',   width: 12 },
+            { header: 'Origen',   key: 'Origen',   width: 20 }
         ];
 
+        // Encabezado
         ws.getRow(1).eachCell(cell => {
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
             cell.fill = {
@@ -188,67 +189,86 @@ exports.exportExcel = async (req, res) => {
             };
             cell.alignment = { horizontal: 'center' };
             cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
+                top:    { style: 'thin' },
+                left:   { style: 'thin' },
                 bottom: { style: 'thin' },
-                right: { style: 'thin' }
+                right:  { style: 'thin' }
             };
         });
 
-        ws.getColumn('Precio').numFmt = '"$ "#,##0';
+        ws.getColumn('Precio').numFmt = '"$"#,##0';
 
         rows.forEach(r => {
-            r.Precio = parseFloat(r.Precio);
-            r.Cantidad = parseInt(r.Cantidad, 10);
-            ws.addRow(r);
+            ws.addRow({
+                Fecha:    r.Fecha,
+                Cliente:  r.Cliente,
+                Producto: r.Producto,
+                Cantidad: parseInt(r.Cantidad, 10),
+                Precio:   parseFloat(r.Precio),
+                Estado:   r.Estado,
+                Origen:   r.Origen
+            });
         });
 
         const lastDataRow = ws.rowCount;
         for (let i = 2; i <= lastDataRow; i++) {
             ws.getRow(i).eachCell(cell => {
                 cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
+                    top:    { style: 'thin' },
+                    left:   { style: 'thin' },
                     bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    right:  { style: 'thin' }
                 };
             });
         }
 
+        // Fila de totales
         const totalRow = ws.addRow({
-            Fecha: '',
-            Cliente: '',
+            Fecha:    '',
+            Cliente:  '',
             Producto: 'Total',
             Cantidad: { formula: `SUM(D2:D${lastDataRow})` },
-            Precio: { formula: `SUM(E2:E${lastDataRow})` },
-            Estado: '',
-            Origen: ''
-        });
-        ['D', 'E'].forEach(col => {
-            const cell = totalRow.getCell(col);
-            cell.font = { bold: true };
-            if (col === 'E') cell.numFmt = '"$ "#,##0';
-            cell.alignment = { horizontal: col === 'E' ? 'right' : 'center' };
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFFFFF00' }
-            };
-            cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
+            Precio:   { formula: `SUM(E2:E${lastDataRow})` },
+            Estado:   '',
+            Origen:   ''
         });
 
-        res.setHeader('Content-Type',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        // Estilo ROJO con letras blancas en la fila de totales
+        ['D', 'E'].forEach(col => {
+            const cell = totalRow.getCell(col);
+            cell.fill = {
+                type:    'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFF0000' }  // fondo rojo
+            };
+            cell.font = {
+                bold:  true,
+                color: { argb: 'FFFFFFFF' }    // letra blanca
+            };
+            cell.alignment = { horizontal: col === 'E' ? 'right' : 'center' };
+            cell.border = {
+                top:    { style: 'thin' },
+                left:   { style: 'thin' },
+                bottom: { style: 'thin' },
+                right:  { style: 'thin' }
+            };
+            if (col === 'E') {
+                cell.numFmt = '"$"#,##0';
+            }
+        });
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
         let filename = `ventas_${start}_a_${end}`;
-        if (client_id !== '') filename += `_c${client_id}`;
-        if (paid) filename += `_paid${paid}`;
+        if (client_id) filename += `_c${client_id}`;
+        if (paid)      filename += `_paid${paid}`;
         filename += '.xlsx';
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${filename}"`
+        );
 
         await wb.xlsx.write(res);
         res.end();

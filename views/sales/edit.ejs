@@ -7,20 +7,8 @@
     <link rel="stylesheet" href="/css/styleSales.css">
 </head>
 <body>
-
-<nav>
-    <div class="logo">SaleySpa</div>
-    <button id="burger" class="hamburger" aria-label="Menú">
-        <span></span><span></span><span></span>
-    </button>
-    <aside id="nav-menu" class="nav-menu">
-        <a href="/">Inicio</a>
-        <a href="/clients">Clientes</a>
-        <a href="/products">Productos</a>
-        <a href="/sales">Ventas</a>
-        <a href="/logout">Salir</a>
-    </aside>
-</nav>
+<!-- Navbar común sin hamburguesa -->
+<%- include('../partials/navbar') %>
 
 <div class="container edit-card">
     <h1 class="card-title">Editar Venta / Servicio</h1>
@@ -35,7 +23,8 @@
             <label for="client_id">Cliente</label>
             <select name="client_id" id="client_id" required>
                 <% clients.forEach(c => { %>
-                    <option value="<%= c.id %>"
+                    <option
+                            value="<%= c.id %>"
                             <%= sale.client_id == c.id ? 'selected' : '' %>>
                         <%= c.name %>
                     </option>
@@ -43,7 +32,7 @@
             </select>
         </div>
 
-        <!-- Producto -->
+        <!-- Producto / Servicio -->
         <div class="form-group">
             <label for="product_id">Producto / Servicio</label>
             <select name="product_id" id="product_id" required>
@@ -105,7 +94,7 @@
             >
         </div>
 
-        <!-- Fecha -->
+        <!-- Fecha de venta -->
         <div class="form-group">
             <label for="sold_at">Fecha de venta</label>
             <input
@@ -143,17 +132,22 @@
         <!-- Origen de pago -->
         <div class="form-group">
             <label for="payment_source">Origen de pago</label>
-            <input
-                    type="text"
+            <select
                     name="payment_source"
                     id="payment_source"
-                    placeholder="Ej. Tarjeta, Efectivo..."
-                    value="<%= sale.payment_source || '' %>"
-                    <%= sale.paid ? '' : 'disabled' %>
-            />
+                    <%= !sale.paid ? 'disabled' : '' %>
+                    required
+            >
+                <option value="">Seleccione...</option>
+                <option value="NEQUI"       <%= sale.payment_source==='NEQUI'       ? 'selected' : '' %>>NEQUI</option>
+                <option value="DAVIPLATA"   <%= sale.payment_source==='DAVIPLATA'   ? 'selected' : '' %>>DAVIPLATA</option>
+                <option value="EFECTIVO"    <%= sale.payment_source==='EFECTIVO'    ? 'selected' : '' %>>EFECTIVO</option>
+                <option value="TRANSFIYA"   <%= sale.payment_source==='TRANSFIYA'   ? 'selected' : '' %>>TRANSFIYA</option>
+                <option value="NU"          <%= sale.payment_source==='NU'          ? 'selected' : '' %>>NU</option>
+            </select>
         </div>
 
-        <!-- Botón -->
+        <!-- Botón Guardar -->
         <div class="form-group full-width">
             <button type="submit" class="btn">Guardar cambios</button>
         </div>
@@ -163,20 +157,6 @@
 </div>
 
 <script>
-    // Menú hamburguesa
-    const b = document.getElementById('burger'),
-        m = document.getElementById('nav-menu');
-    b.onclick = () => {
-        b.classList.toggle('active');
-        m.classList.toggle('active');
-    };
-    document.addEventListener('click', e => {
-        if (!m.contains(e.target) && !b.contains(e.target)) {
-            b.classList.remove('active');
-            m.classList.remove('active');
-        }
-    });
-
     // Sincronizar precio unitario y total
     const productSelect = document.getElementById('product_id');
     const qtyInput      = document.getElementById('quantity');
@@ -185,17 +165,15 @@
     const tpShow        = document.getElementById('total_price_show');
     const tpHidden      = document.getElementById('total_price');
     const paidRadios    = document.querySelectorAll('input[name="paid"]');
-    const sourceInput   = document.getElementById('payment_source');
+    const sourceSelect  = document.getElementById('payment_source');
 
     function updatePrices() {
         const opt   = productSelect.selectedOptions[0];
         const price = opt ? parseFloat(opt.dataset.price) : 0;
         const qty   = parseInt(qtyInput.value, 10) || 1;
-        // unitario
         upHidden.value = price;
         upShow.value   = '$ ' + price.toLocaleString('es-CO');
-        // total
-        const total = price * qty;
+        const total   = price * qty;
         tpHidden.value = total;
         tpShow.value   = '$ ' + total.toLocaleString('es-CO');
     }
@@ -205,13 +183,13 @@
     updatePrices();
 
     // Habilitar/deshabilitar origen de pago
-    paidRadios.forEach(r => {
-        r.addEventListener('change', () => {
-            if (r.value === '0') {
-                sourceInput.disabled = true;
-                sourceInput.value    = '';
+    paidRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value === '0') {
+                sourceSelect.disabled = true;
+                sourceSelect.value    = '';
             } else {
-                sourceInput.disabled = false;
+                sourceSelect.disabled = false;
             }
         });
     });

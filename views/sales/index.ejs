@@ -7,30 +7,21 @@
     <!-- estilos globales -->
     <link rel="stylesheet" href="/css/styleClients.css">
     <link rel="stylesheet" href="/css/styleNav.css">
-    <!-- este -->
     <link rel="stylesheet" href="/css/styleSales.css">
 
-    <!-- Flatpickr -->
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+    <!-- Flatpickr CSS -->
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    >
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css"
+    >
 </head>
 <body>
-
-<nav>
-    <div class="logo">SaleySpa</div>
-    <button id="burger" class="hamburger" aria-label="Menú">
-        <span></span><span></span><span></span>
-    </button>
-    <aside id="nav-menu" class="nav-menu">
-        <a href="/">Inicio</a>
-        <a href="/clients">Clientes</a>
-        <a href="/products">Productos</a>
-        <a href="/sales">Ventas</a>
-        <a href="/logout">Salir</a>
-    </aside>
-</nav>
+<!-- Navbar común sin hamburguesa -->
+<%- include('../partials/navbar') %>
 
 <div class="container">
     <h1 class="page-title">Ventas / Servicios</h1>
@@ -39,29 +30,37 @@
     <form class="actions filters" method="get" action="/sales">
         <div class="form-group">
             <label for="start">Desde</label>
-            <input id="start" type="text" name="start"
-                   class="date-picker"
-                   value="<%= filters.start||'' %>"
-                   placeholder="dd/mm/yyyy"
-                   readonly>
+            <input
+                    id="start"
+                    type="text"
+                    name="start"
+                    class="date-picker"
+                    value="<%= filters.start || '' %>"
+                    placeholder="dd/mm/yyyy"
+                    readonly
+            >
         </div>
         <div class="form-group">
             <label for="end">Hasta</label>
-            <input id="end" type="text" name="end"
-                   class="date-picker"
-                   value="<%= filters.end||'' %>"
-                   placeholder="dd/mm/yyyy"
-                   readonly>
+            <input
+                    id="end"
+                    type="text"
+                    name="end"
+                    class="date-picker"
+                    value="<%= filters.end || '' %>"
+                    placeholder="dd/mm/yyyy"
+                    readonly
+            >
         </div>
         <div class="form-group">
             <label for="client_id">Cliente</label>
             <select id="client_id" name="client_id">
                 <option value="">Todos</option>
                 <% clients.forEach(c => { %>
-                    <option value="<%= c.id %>"
-                            <%= String(c.id)===filters.client_id?'selected':'' %>>
-                        <%= c.name %>
-                    </option>
+                    <option
+                            value="<%= c.id %>"
+                            <%= String(c.id) === filters.client_id ? 'selected' : '' %>
+                    ><%= c.name %></option>
                 <% }) %>
             </select>
         </div>
@@ -69,8 +68,8 @@
             <label for="paid">Estado</label>
             <select id="paid" name="paid">
                 <option value="">Todos</option>
-                <option value="1" <%= filters.paid==='1'?'selected':'' %>>Pagado</option>
-                <option value="0" <%= filters.paid==='0'?'selected':'' %>>Pendiente</option>
+                <option value="1" <%= filters.paid === '1' ? 'selected' : '' %>>Pagado</option>
+                <option value="0" <%= filters.paid === '0' ? 'selected' : '' %>>Pendiente</option>
             </select>
         </div>
         <div class="buttons-group">
@@ -107,32 +106,37 @@
                 <tr>
                     <td colspan="9" class="text-center">No hay ventas.</td>
                 </tr>
-            <% } else sales.forEach(s => { %>
-                <tr>
-                    <td><%= s.sold_at_fmt %></td>
-                    <td><%= s.client_name %></td>
-                    <td><%= s.product_name %></td>
-                    <td class="text-center"><%= s.quantity %></td>
-                    <td class="text-right"><%= s.unit_price_fmt %></td>
-                    <td class="text-right"><%= s.total_fmt %></td>
-                    <td class="text-center"><%= s.paid_label %></td>
-                    <td><%= s.origin_label %></td>
-                    <td>
-                        <a href="/sales/<%= s.id %>/edit" class="edit-btn">Editar</a>
-                        <form action="/sales/<%= s.id %>/delete"
-                              method="post"
-                              class="inline-form"
-                              onsubmit="return confirm('¿Inactivar esta venta?');">
-                            <button type="submit" class="delete-btn">Inactivar</button>
-                        </form>
-                    </td>
-                </tr>
-            <% }) %>
+            <% } else { %>
+                <% sales.forEach(s => { %>
+                    <tr>
+                        <td><%= s.sold_at_fmt %></td>
+                        <td><%= s.client_name %></td>
+                        <td><%= s.product_name %></td>
+                        <td class="text-center"><%= s.quantity %></td>
+                        <td class="text-right"><%= s.unit_price_fmt %></td>
+                        <td class="text-right"><%= s.total_fmt %></td>
+                        <td class="text-center"><%= s.paid_label %></td>
+                        <td><%= s.origin_label %></td>
+                        <td>
+                            <a href="/sales/<%= s.id %>/edit" class="edit-btn">Editar</a>
+                            <form
+                                    action="/sales/<%= s.id %>/delete"
+                                    method="post"
+                                    class="inline-form"
+                                    onsubmit="return confirm('¿Inactivar esta venta?');"
+                            >
+                                <button type="submit" class="delete-btn">Inactivar</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } %>
             </tbody>
         </table>
     </div>
 </div>
 
+<!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
@@ -140,15 +144,6 @@
         locale: "es",
         dateFormat: "d/m/Y",
         allowInput: true
-    });
-
-    const b = document.getElementById('burger'),
-        m = document.getElementById('nav-menu');
-    b.onclick = ()=>{ b.classList.toggle('active'); m.classList.toggle('active'); };
-    document.addEventListener('click', e=>{
-        if (!m.contains(e.target)&&!b.contains(e.target)) {
-            b.classList.remove('active'); m.classList.remove('active');
-        }
     });
 </script>
 </body>

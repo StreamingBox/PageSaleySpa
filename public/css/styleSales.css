@@ -1,11 +1,30 @@
 /* ============================================================
+   AJUSTES PARA SEPARAR DEL NAVBAR Y DESTACAR EL TÍTULO
+   ============================================================ */
+
+.container {
+    max-width: 1000px;
+    margin: 5rem auto 1.5rem;    /* 5rem de espacio superior para separar del navbar */
+    padding: 0 1rem;
+    overflow-x: hidden;
+}
+
+.page-title {
+    font-size: 2.5rem;           /* Mayor tamaño */
+    font-weight: 700;            /* Negrita */
+    color: #5a0ca1;              /* Color corporativo */
+    margin-bottom: 1.5rem;       /* Espacio inferior */
+    text-align: center;          /* Centrado horizontal */
+    line-height: 1.2;            /* Altura de línea cómoda */
+    letter-spacing: 0.5px;       /* Espaciado de letras */
+}
+
+/* ============================================================
    CONTENEDOR PRINCIPAL
    ============================================================ */
 .container {
-    max-width: 1000px;
-    margin: 1.5rem auto;
-    padding: 0 1rem;
-    overflow-x: hidden;
+    /* Estos valores ya vienen arriba; si quieres, podrías
+       eliminar la definición previa que usaba margin-top pequeño */
 }
 
 /* ============================================================
@@ -258,6 +277,7 @@
 .edit-card .link a:hover {
     text-decoration: underline;
 }
+
 /* ============================================================
    BOTONES “Filtrar” y “Limpiar” (dentro de .actions)
    ============================================================ */

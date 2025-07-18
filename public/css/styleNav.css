@@ -1,27 +1,52 @@
-/* ===== NAVBAR ===== */
-nav{
-    position:fixed;top:0;left:0;right:0;height:56px;
-    background:#fff;display:flex;align-items:center;justify-content:space-between;
-    padding:0 1rem;box-shadow:0 2px 8px rgba(0,0,0,.05);z-index:1000;
-}
-nav .logo{font-weight:700;color:#5a0ca1;font-size:1.25rem}
+/* ===================== */
+/*   NAVBAR HORIZONTAL   */
+/* ===================== */
 
-/* ===== HAMBURGUESA ===== */
-.hamburger{display:flex;flex-direction:column;gap:5px;border:none;background:transparent;cursor:pointer}
-.hamburger span{width:26px;height:3px;background:#5a0ca1;border-radius:2px;transition:transform .3s,opacity .3s}
-.hamburger.active span:nth-child(1){transform:translateY(8px) rotate(45deg)}
-.hamburger.active span:nth-child(2){opacity:0}
-.hamburger.active span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
-
-/* ===== PANEL LATERAL ===== */
-.nav-menu{
-    position:fixed;top:56px;right:-220px;width:220px;height:calc(100% - 56px);
-    background:#fff;box-shadow:-2px 0 8px rgba(0,0,0,.08);
-    display:flex;flex-direction:column;padding:1rem;transition:right .3s;z-index:999;
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
 }
-.nav-menu a{margin-bottom:1rem;color:#5a0ca1;font-weight:600;text-decoration:none}
-.nav-menu a:hover{text-decoration:underline}
-.nav-menu.active{right:0}
+
+nav .logo {
+    font-weight: 700;
+    color: #5a0ca1;
+    font-size: 1.25rem;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: row;
+    margin-left: auto;
+    position: static;    /* ya no off-canvas */
+    width: auto;
+    height: auto;
+    background: transparent;
+    box-shadow: none;
+    transition: none;
+}
+
+.nav-menu a {
+    margin: 0 1rem;
+    color: #5a0ca1;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.5;
+}
+
+.nav-menu a:hover {
+    text-decoration: underline;
+}
 
 /* separa el contenido del navbar */
-.container{margin-top:72px}
+.container {
+    margin-top: 72px;
+}

@@ -20,19 +20,8 @@
     >
 </head>
 <body>
-<nav>
-    <div class="logo">SaleySpa</div>
-    <button id="burger" class="hamburger" aria-label="Menú">
-        <span></span><span></span><span></span>
-    </button>
-    <aside id="nav-menu" class="nav-menu">
-        <a href="/">Inicio</a>
-        <a href="/clients">Clientes</a>
-        <a href="/products">Productos</a>
-        <a href="/sales">Ventas</a>
-        <a href="/logout">Salir</a>
-    </aside>
-</nav>
+<!-- Navbar común sin hamburguesa -->
+<%- include('../partials/navbar') %>
 
 <div class="container">
     <h1 class="page-title">Resumen General</h1>
@@ -158,19 +147,6 @@
         locale: "es",
         dateFormat: "d/m/Y",
         allowInput: true
-    });
-
-    const burger = document.getElementById('burger');
-    const menu   = document.getElementById('nav-menu');
-    burger.addEventListener('click', () => {
-        burger.classList.toggle('active');
-        menu.classList.toggle('active');
-    });
-    document.addEventListener('click', e => {
-        if (!menu.contains(e.target) && !burger.contains(e.target)) {
-            burger.classList.remove('active');
-            menu.classList.remove('active');
-        }
     });
 </script>
 </body>
