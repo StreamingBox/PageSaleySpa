@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SaleySpa – <%= movement.id ? 'Editar Movimiento' : 'Nuevo Movimiento' %></title>
+    <!-- CSS navegación -->
+    <link rel="stylesheet" href="/css/styleNav.css">
+    <!-- CSS movimientos y formularios -->
+    <link rel="stylesheet" href="/css/styleMovements.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="site-nav">
+    <div class="nav-container">
+        <a href="/"          class="nav-link">Inicio</a>
+        <a href="/clients"   class="nav-link">Clientes</a>
+        <a href="/products"  class="nav-link">Productos</a>
+        <a href="/sales"     class="nav-link">Ventas</a>
+        <a href="/movements" class="nav-link active">Movimientos</a>
+        <a href="/logout"    class="nav-link">Salir</a>
+    </div>
+</nav>
+
+<!-- CONTENIDO FORMULARIO -->
+<div class="container">
+    <div class="edit-card">
+        <h2 class="card-title">
+            <%= movement.id ? 'Editar Movimiento' : 'Nuevo Movimiento' %>
+        </h2>
+
+        <form action="<%= movement.id
+                ? '/movements/' + movement.id + '/edit'
+                : '/movements/new' %>"
+              method="POST"
+              enctype="multipart/form-data">
+
+            <input type="hidden" name="currentAttachment" value="<%= movement.attachment || '' %>"/>
+
+            <div class="form-grid">
+                <!-- Fecha -->
+                <div class="form-group">
+                    <label for="date">Fecha</label>
+                    <input type="date" id="date" name="date" required
+                           value="<%= movement.date?.toISOString().split('T')[0] || '' %>" />
+                </div>
+
+                <!-- Tipo -->
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="type" value="gasto"
+                                    <%= movement.type==='gasto' ? 'checked' : '' %> /> Gasto</label>
+                        <label><input type="radio" name="type" value="ingreso"
+                                    <%= movement.type==='ingreso' ? 'checked' : '' %> /> Ingreso</label>
+                    </div>
+                </div>
+
+                <!-- Valor -->
+                <div class="form-group">
+                    <label for="amount">Valor</label>
+                    <input type="number" id="amount" name="amount" step="0.01" required
+                           value="<%= movement.amount || '' %>" />
+                </div>
+
+                <!-- Tipo de pago -->
+                <div class="form-group">
+                    <label for="payment_type">Tipo de pago</label>
+                    <select id="payment_type" name="payment_type" required>
+                        <option value="efectivo"
+                                <%= movement.payment_type==='efectivo' ? 'selected' : '' %>>
+                            Efectivo
+                        </option>
+                        <option value="tarjeta"
+                                <%= movement.payment_type==='tarjeta' ? 'selected' : '' %>>
+                            Tarjeta
+                        </option>
+                        <option value="transferencia"
+                                <%= movement.payment_type==='transferencia' ? 'selected' : '' %>>
+                            Transferencia
+                        </option>
+                        <option value="cheque"
+                                <%= movement.payment_type==='cheque' ? 'selected' : '' %>>
+                            Cheque
+                        </option>
+                        <option value="otro"
+                                <%= movement.payment_type==='otro' ? 'selected' : '' %>>
+                            Otro
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Categoría -->
+                <div class="form-group full-width">
+                    <label for="category">Categoría</label>
+                    <input type="text" id="category" name="category"
+                           value="<%= movement.category || '' %>" />
+                </div>
+
+                <!-- Descripción -->
+                <div class="form-group full-width">
+                    <label for="description">Descripción</label>
+                    <textarea id="description" name="description" rows="3"><%= movement.description || '' %></textarea>
+                </div>
+
+                <!-- Cuenta -->
+                <div class="form-group">
+                    <label for="account">Cuenta</label>
+                    <input type="text" id="account" name="account"
+                           value="<%= movement.account || '' %>" />
+                </div>
+
+                <!-- Adjunto -->
+                <div class="form-group">
+                    <label for="attachment">Adjunto</label>
+                    <input type="file" id="attachment" name="attachment" />
+                    <% if (movement.attachment) { %>
+                        <p class="text-sm">
+                            Actual:
+                            <a href="/uploads/<%= movement.attachment %>" target="_blank">
+                                <%= movement.attachment %>
+                            </a>
+                        </p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Botón Guardar -->
+            <button type="submit" class="btn-primary">Guardar</button>
+
+            <!-- Volver -->
+            <div class="link">
+                <a href="/movements">← Volver a Movimientos</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-container">
+        <p>© <%= new Date().getFullYear() %> SaleySpa. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+</body>
+</html>

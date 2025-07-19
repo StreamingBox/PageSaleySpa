@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SaleySpa – Movimientos</title>
+
+    <!-- CSS global de navegación + página -->
+    <link rel="stylesheet" href="/css/styleNav.css">
+    <link rel="stylesheet" href="/css/styleMovements.css">
+</head>
+<body>
+
+<!-- ENCABEZADO + NAVBAR -->
+<header class="site-header">
+    <div class="header-container">
+        <a href="/" class="brand">SaleySpa</a>
+
+        <nav class="main-nav">
+            <a href="/"          class="nav-link">Inicio</a>
+            <a href="/clients"   class="nav-link">Clientes</a>
+            <a href="/products"  class="nav-link">Productos</a>
+            <a href="/sales"     class="nav-link">Ventas</a>
+            <a href="/movements" class="nav-link active">Movimientos</a>
+            <a href="/logout"    class="nav-link">Salir</a>
+        </nav>
+    </div>
+</header>
+
+<!-- CONTENIDO PRINCIPAL -->
+<main class="main-content">
+    <div class="card shadow-lg">
+        <h1 class="page-title text-center">Movimientos</h1>
+
+        <div class="actions mb-4 text-right">
+            <a href="/movements/new" class="btn-primary new-movement">+ Nuevo Movimiento</a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="sales-table">
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                    <th>Pago</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Cuenta</th>
+                    <th class="text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% if (Array.isArray(movements) && movements.length) { %>
+                    <% movements.forEach(function (mov) { %>
+                        <tr>
+                            <td><%= mov.date ? new Date(mov.date).toISOString().split('T')[0] : '' %></td>
+                            <td><%= mov.type === 'gasto' ? 'Gasto' : 'Ingreso' %></td>
+                            <td><%= Number(mov.amount).toFixed(2) %></td>
+                            <td class="capitalize"><%= mov.payment_type || '' %></td>
+                            <td><%= mov.category || '' %></td>
+                            <td><%= mov.description || '' %></td>
+                            <td><%= mov.account || '' %></td>
+                            <td class="text-right">
+                                <a href="/movements/<%= mov.id %>/edit" class="edit-btn">Editar</a>
+
+                                <form action="/movements/<%= mov.id %>/delete"
+                                      method="POST"
+                                      class="inline-form">
+                                    <button type="submit"
+                                            class="delete-btn"
+                                            onclick="return confirm('¿Borrar este movimiento?')">
+                                        Borrar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            No hay movimientos registrados todavía.
+                        </td>
+                    </tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-container">
+        <p>© <%= new Date().getFullYear() %> SaleySpa. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+</body>
+</html>

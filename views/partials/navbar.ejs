@@ -2,20 +2,27 @@
 <nav>
     <div class="logo">SaleySpa</div>
 
-    <div class="nav-menu">
+    <div class="nav-menu" id="nav-menu">
         <a href="/">Inicio</a>
         <a href="/clients">Clientes</a>
         <a href="/products">Productos</a>
         <a href="/sales">Ventas</a>
+        <!-- Enlace al módulo de Movimientos -->
+        <a href="/movements">Movimientos</a>
         <a href="/logout">Salir</a>
+
+    </div>
+
+    <!-- (si usas un icono hamburguesa) -->
+    <div id="hamburger" class="hamburger-icon">
+        <!-- tu icono / svg aquí -->
     </div>
 </nav>
 
-
 <!-- Script hamburguesa -->
 <script>
-    const burger  = document.getElementById('hamburger');
-    const menu    = document.getElementById('nav-menu');
+    const burger = document.getElementById('hamburger');
+    const menu   = document.getElementById('nav-menu');
 
     burger.addEventListener('click', () => {
         burger.classList.toggle('active');
@@ -23,7 +30,7 @@
     });
 
     /* Cerrar al clicar fuera */
-    document.addEventListener('click', (e)=>{
+    document.addEventListener('click', (e) => {
         if (!menu.contains(e.target) && !burger.contains(e.target)) {
             burger.classList.remove('active');
             menu.classList.remove('active');

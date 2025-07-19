@@ -1,0 +1,224 @@
+/* ==========================================================
+   VARIABLES BÁSICAS (colores corporativos reutilizables)
+   ========================================================== */
+:root {
+    --purple:     #5c0dcc;  /* tono principal */
+    --purple-dark:#48089c;
+    --purple-soft:#f4e6fb;
+    --grey-bg:    #f5f5fa;
+    --grey-line:  #ece4f4;
+}
+
+/* ==========================================================
+   HEADER + NAVBAR (reutilizable)
+   ========================================================== */
+.site-header {
+    background: var(--grey-bg);
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.brand {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--purple);
+    text-decoration: none;
+}
+.main-nav { display: flex; gap: 2rem; }
+.nav-link {
+    color: var(--purple);
+    font-weight: 500;
+    text-decoration: none;
+}
+.nav-link:hover      { text-decoration: underline; }
+.nav-link.active     { font-weight: 700; border-bottom: 2px solid var(--purple); }
+
+/* ==========================================================
+   LAYOUT DE PÁGINA MOVIMIENTOS
+   ========================================================== */
+.main-content {             /* contenedor general */
+    max-width: 1200px;
+    margin: 32px auto;
+    padding: 0 24px;
+}
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+}
+.shadow-lg { box-shadow: 0 6px 14px rgba(0,0,0,.08); }
+.page-title {
+    font-size: 2.25rem;
+    color: var(--purple);
+    margin-bottom: 16px;
+}
+.actions { margin-bottom: 16px; }
+
+/* Botón primario (general) */
+.btn-primary {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    background: var(--purple);
+    border: none;
+    cursor: pointer;
+    transition: background .2s;
+}
+.btn-primary:hover { background: var(--purple-dark); }
+
+/* Botón dentro del formulario de edición: ancho completo */
+.edit-card .btn-primary {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* ==========================================================
+   TABLA DE MOVIMIENTOS
+   ========================================================== */
+.table-wrap { overflow-x: auto; }
+.sales-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+.sales-table thead      { background: var(--purple-soft); }
+.sales-table th,
+.sales-table td {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--grey-line);
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+.sales-table th {
+    color: var(--purple);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.sales-table td                  { white-space: nowrap; }
+.sales-table tbody tr:nth-child(even) { background: #fcf8ff; }
+.sales-table tbody tr:hover          { background: #f0e6f9; }
+
+/* Columnas mínimas para que no se desordene */
+.sales-table th:nth-child(1),
+.sales-table td:nth-child(1) { min-width: 90px; }
+.sales-table th:nth-child(3),
+.sales-table td:nth-child(3) { min-width: 70px; }
+.sales-table th:nth-child(8),
+.sales-table td:nth-child(8) { min-width: 140px; }
+
+/* Alineaciones de texto */
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
+/* ==========================================================
+   BOTONES DE ACCIÓN (Editar / Borrar)
+   ========================================================== */
+.edit-btn {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--purple);
+    border-radius: 4px;
+    color: var(--purple);
+    background: transparent;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+}
+.edit-btn:hover {
+    background: var(--purple);
+    color: #fff;
+}
+.inline-form { display: inline; }
+.delete-btn {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    color: #fff;
+    background: #d32f2f;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background .2s;
+}
+.delete-btn:hover { background: #b71c1c; }
+
+/* ==========================================================
+   FORMULARIO DE EDICIÓN (si lo usas en otra vista)
+   ========================================================== */
+.edit-card {
+    max-width: 700px;
+    margin: 5rem auto;
+    background: #fff;
+    border-radius: 10px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.card-title {
+    font-size: 1.75rem;
+    color: var(--purple);
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+.form-group { display: flex; flex-direction: column; }
+.form-group label {
+    font-weight: 600;
+    color: var(--purple);
+    margin-bottom: 0.25rem;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    border: 1px solid #c3b8d9;
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+    transition: box-shadow .15s ease, border .15s ease;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #7d20d5;
+    box-shadow: 0 0 0 3px rgba(125,32,213,.12);
+    outline: none;
+}
+.radio-group { display: flex; gap: 1rem; align-items: center; }
+.full-width  { grid-column: 1 / -1; }
+
+@media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================
+   FOOTER
+   ========================================================== */
+.footer {
+    background: #f9f9f9;
+    padding: 1rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid #ececec;
+}
+.footer-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+.footer p {
+    color: #6b6b6b;
+    font-size: 0.9rem;
+    margin: 0;
+}
