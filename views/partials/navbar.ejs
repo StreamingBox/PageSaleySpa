@@ -1,25 +1,22 @@
 <!-- NAVBAR -->
-<nav>
+<nav class="site-nav">
     <div class="logo">SaleySpa</div>
 
     <div class="nav-menu" id="nav-menu">
-        <a href="/">Inicio</a>
-        <a href="/clients">Clientes</a>
-        <a href="/products">Productos</a>
-        <a href="/sales">Ventas</a>
-        <!-- Enlace al módulo de Movimientos -->
-        <a href="/movements">Movimientos</a>
-        <a href="/logout">Salir</a>
-
+        <a href="/"           class="nav-link <%= path === '/' ? 'active' : '' %>">Inicio</a>
+        <a href="/clients"    class="nav-link <%= path === '/clients' ? 'active' : '' %>">Clientes</a>
+        <a href="/products"   class="nav-link <%= path === '/products' ? 'active' : '' %>">Productos</a>
+        <a href="/sales"      class="nav-link <%= path === '/sales' ? 'active' : '' %>">Ventas</a>
+        <a href="/movements"  class="nav-link <%= path === '/movements' ? 'active' : '' %>">Movimientos</a>
+        <a href="/reports"    class="nav-link <%= path === '/reports' ? 'active' : '' %>">Reportes</a>
+        <a href="/logout"     class="nav-link">Salir</a>
     </div>
 
-    <!-- (si usas un icono hamburguesa) -->
     <div id="hamburger" class="hamburger-icon">
-        <!-- tu icono / svg aquí -->
+        <!-- icono opcional -->
     </div>
 </nav>
 
-<!-- Script hamburguesa -->
 <script>
     const burger = document.getElementById('hamburger');
     const menu   = document.getElementById('nav-menu');
@@ -29,7 +26,6 @@
         menu.classList.toggle('active');
     });
 
-    /* Cerrar al clicar fuera */
     document.addEventListener('click', (e) => {
         if (!menu.contains(e.target) && !burger.contains(e.target)) {
             burger.classList.remove('active');

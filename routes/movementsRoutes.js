@@ -14,7 +14,7 @@ router.get('/',                    mc.index);
 router.get('/new',                 mc.newForm);
 router.post('/new',    upload.single('attachment'), mc.create);
 router.get('/:id/edit',            mc.editForm);
-router.post('/:id/edit', upload.single('attachment'), mc.update);
-router.post('/:id/delete',         mc.delete);
+router.put('/:id',      upload.single('attachment'), mc.update);   // ✅ Usa PUT
+router.delete('/:id',              mc.delete);                    // ✅ Usa DELETE
 
 module.exports = router;

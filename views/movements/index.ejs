@@ -1,43 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaleySpa – Movimientos</title>
-
-    <!-- CSS global de navegación + página -->
     <link rel="stylesheet" href="/css/styleNav.css">
     <link rel="stylesheet" href="/css/styleMovements.css">
 </head>
 <body>
 
-<!-- ENCABEZADO + NAVBAR -->
-<header class="site-header">
-    <div class="header-container">
-        <a href="/" class="brand">SaleySpa</a>
+<%- include('../partials/navbar') %>
 
-        <nav class="main-nav">
-            <a href="/"          class="nav-link">Inicio</a>
-            <a href="/clients"   class="nav-link">Clientes</a>
-            <a href="/products"  class="nav-link">Productos</a>
-            <a href="/sales"     class="nav-link">Ventas</a>
-            <a href="/movements" class="nav-link active">Movimientos</a>
-            <a href="/logout"    class="nav-link">Salir</a>
-        </nav>
-    </div>
-</header>
-
-<!-- CONTENIDO PRINCIPAL -->
-<main class="main-content">
-    <div class="card shadow-lg">
-        <h1 class="page-title text-center">Movimientos</h1>
-
-        <div class="actions mb-4 text-right">
-            <a href="/movements/new" class="btn-primary new-movement">+ Nuevo Movimiento</a>
+<div class="container">
+    <div class="list-card">
+        <div class="list-header">
+            <h2 class="card-title">Movimientos</h2>
+            <a href="/movements/new" class="btn-primary">Nuevo movimiento</a>
         </div>
 
-        <div class="table-wrap">
-            <table class="sales-table">
+        <% if (movements.length === 0) { %>
+            <p class="empty-state">No hay movimientos registrados.</p>
+        <% } else { %>
+            <table class="table table-striped table-hover">
                 <thead>
                 <tr>
                     <th>Fecha</th>
@@ -46,50 +30,32 @@
                     <th>Pago</th>
                     <th>Categoría</th>
                     <th>Descripción</th>
-                    <th>Cuenta</th>
-                    <th class="text-right">Acciones</th>
+                    <th>Acciones</th>
                 </tr>
                 </thead>
                 <tbody>
-                <% if (Array.isArray(movements) && movements.length) { %>
-                    <% movements.forEach(function (mov) { %>
-                        <tr>
-                            <td><%= mov.date ? new Date(mov.date).toISOString().split('T')[0] : '' %></td>
-                            <td><%= mov.type === 'gasto' ? 'Gasto' : 'Ingreso' %></td>
-                            <td><%= Number(mov.amount).toFixed(2) %></td>
-                            <td class="capitalize"><%= mov.payment_type || '' %></td>
-                            <td><%= mov.category || '' %></td>
-                            <td><%= mov.description || '' %></td>
-                            <td><%= mov.account || '' %></td>
-                            <td class="text-right">
-                                <a href="/movements/<%= mov.id %>/edit" class="edit-btn">Editar</a>
-
-                                <form action="/movements/<%= mov.id %>/delete"
-                                      method="POST"
-                                      class="inline-form">
-                                    <button type="submit"
-                                            class="delete-btn"
-                                            onclick="return confirm('¿Borrar este movimiento?')">
-                                        Borrar
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
+                <% movements.forEach(mov => { %>
                     <tr>
-                        <td colspan="8" class="text-center">
-                            No hay movimientos registrados todavía.
+                        <td><%= mov.date.toISOString().split('T')[0] %></td>
+                        <td><%= mov.type === 'gasto' ? 'Gasto' : 'Ingreso' %></td>
+                        <td>$<%= Number(mov.amount).toLocaleString('es-CO') %></td>
+                        <td><%= mov.payment_type %></td>
+                        <td><%= mov.category %></td>
+                        <td><%= mov.description %></td>
+                        <td>
+                            <a href="/movements/<%= mov.id %>/edit" class="btn-secondary btn-sm">Editar</a>
+                            <form action="/movements/<%= mov.id %>?_method=DELETE" method="POST" style="display:inline;">
+                                <button class="btn-danger btn-sm" onclick="return confirm('¿Borrar este movimiento?')">Borrar</button>
+                            </form>
                         </td>
                     </tr>
-                <% } %>
+                <% }) %>
                 </tbody>
             </table>
-        </div>
+        <% } %>
     </div>
-</main>
+</div>
 
-<!-- FOOTER -->
 <footer class="footer">
     <div class="footer-container">
         <p>© <%= new Date().getFullYear() %> SaleySpa. Todos los derechos reservados.</p>

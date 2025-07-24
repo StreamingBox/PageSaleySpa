@@ -1,224 +1,199 @@
-/* ==========================================================
-   VARIABLES BÁSICAS (colores corporativos reutilizables)
-   ========================================================== */
-:root {
-    --purple:     #5c0dcc;  /* tono principal */
-    --purple-dark:#48089c;
-    --purple-soft:#f4e6fb;
-    --grey-bg:    #f5f5fa;
-    --grey-line:  #ece4f4;
+/* ────────────────────────────────────────────────
+   ESTILOS GENERALES
+   ──────────────────────────────────────────────── */
+
+html, body {
+    height: 100%;
 }
 
-/* ==========================================================
-   HEADER + NAVBAR (reutilizable)
-   ========================================================== */
-.site-header {
-    background: var(--grey-bg);
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-}
-.header-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 8px 24px;
+body {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.brand {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--purple);
-    text-decoration: none;
-}
-.main-nav { display: flex; gap: 2rem; }
-.nav-link {
-    color: var(--purple);
-    font-weight: 500;
-    text-decoration: none;
-}
-.nav-link:hover      { text-decoration: underline; }
-.nav-link.active     { font-weight: 700; border-bottom: 2px solid var(--purple); }
-
-/* ==========================================================
-   LAYOUT DE PÁGINA MOVIMIENTOS
-   ========================================================== */
-.main-content {             /* contenedor general */
-    max-width: 1200px;
-    margin: 32px auto;
-    padding: 0 24px;
-}
-.card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 32px;
-}
-.shadow-lg { box-shadow: 0 6px 14px rgba(0,0,0,.08); }
-.page-title {
-    font-size: 2.25rem;
-    color: var(--purple);
-    margin-bottom: 16px;
-}
-.actions { margin-bottom: 16px; }
-
-/* Botón primario (general) */
-.btn-primary {
-    display: inline-block;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none;
-    color: #fff;
-    background: var(--purple);
-    border: none;
-    cursor: pointer;
-    transition: background .2s;
-}
-.btn-primary:hover { background: var(--purple-dark); }
-
-/* Botón dentro del formulario de edición: ancho completo */
-.edit-card .btn-primary {
-    width: 100%;
-    margin-top: 1rem;
+    flex-direction: column;
+    font-family: system-ui, sans-serif;
+    color: #222;
+    background: #fafafa;
 }
 
-/* ==========================================================
-   TABLA DE MOVIMIENTOS
-   ========================================================== */
-.table-wrap { overflow-x: auto; }
-.sales-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
+.container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    flex: 1 0 auto;                 /* empuja el footer al fondo */
 }
-.sales-table thead      { background: var(--purple-soft); }
-.sales-table th,
-.sales-table td {
-    padding: 0.75rem 0.5rem;
-    border-bottom: 1px solid var(--grey-line);
-    font-size: 0.95rem;
-    vertical-align: middle;
-}
-.sales-table th {
-    color: var(--purple);
-    font-weight: 600;
-    white-space: nowrap;
-}
-.sales-table td                  { white-space: nowrap; }
-.sales-table tbody tr:nth-child(even) { background: #fcf8ff; }
-.sales-table tbody tr:hover          { background: #f0e6f9; }
 
-/* Columnas mínimas para que no se desordene */
-.sales-table th:nth-child(1),
-.sales-table td:nth-child(1) { min-width: 90px; }
-.sales-table th:nth-child(3),
-.sales-table td:nth-child(3) { min-width: 70px; }
-.sales-table th:nth-child(8),
-.sales-table td:nth-child(8) { min-width: 140px; }
-
-/* Alineaciones de texto */
-.text-center { text-align: center; }
-.text-right  { text-align: right; }
-
-/* ==========================================================
-   BOTONES DE ACCIÓN (Editar / Borrar)
-   ========================================================== */
-.edit-btn {
-    display: inline-block;
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--purple);
-    border-radius: 4px;
-    color: var(--purple);
-    background: transparent;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background .2s, color .2s;
-}
-.edit-btn:hover {
-    background: var(--purple);
-    color: #fff;
-}
-.inline-form { display: inline; }
-.delete-btn {
-    display: inline-block;
-    margin-left: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    color: #fff;
-    background: #d32f2f;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background .2s;
-}
-.delete-btn:hover { background: #b71c1c; }
-
-/* ==========================================================
-   FORMULARIO DE EDICIÓN (si lo usas en otra vista)
-   ========================================================== */
-.edit-card {
-    max-width: 700px;
-    margin: 5rem auto;
-    background: #fff;
-    border-radius: 10px;
-    padding: 2rem 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
 .card-title {
-    font-size: 1.75rem;
-    color: var(--purple);
+    margin: 0;
+    font-size: 1.6rem;
+    color: #4b0082;
+    font-weight: 700;
     text-align: center;
+}
+
+/* ────────────────────────────────────────────────
+   BOTONES
+   ──────────────────────────────────────────────── */
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1;
+    transition: background 0.15s ease-in-out;
+}
+
+.btn-primary { background: #6a0dad; color: #fff; }
+.btn-primary:hover { background: #5900a0; }
+
+.btn-secondary { background: #eeeeee; color: #333; }
+.btn-secondary:hover { background: #dddddd; }
+
+.btn-danger { background: #e74c3c; color: #fff; }
+.btn-danger:hover { background: #cf3b2b; }
+
+.btn-sm { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
+
+/* ────────────────────────────────────────────────
+   LISTA / TABLA (index de movimientos & categorías)
+   ──────────────────────────────────────────────── */
+
+.list-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1.5rem;
 }
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.table thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e5e5e5;
+    font-weight: 600;
+}
+
+.table tbody td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table-striped tbody tr:nth-child(odd) { background: #fafafa; }
+.table-hover   tbody tr:hover          { background: #f5f5ff; }
+
+.text-end { text-align: right; }
+
+.empty-state {
+    padding: 1.5rem 0;
+    color: #777;
+    font-style: italic;
+    text-align: center;
+}
+
+/* ────────────────────────────────────────────────
+   FORMULARIOS (nuevo / editar movimiento)
+   ──────────────────────────────────────────────── */
+
+.edit-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
 .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.25rem 1.5rem;
 }
+
 .form-group { display: flex; flex-direction: column; }
+.form-group.full-width { grid-column: 1 / -1; }
+
 .form-group label {
     font-weight: 600;
-    color: var(--purple);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
+    color: #333;
 }
-.form-group input,
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
 .form-group select,
 .form-group textarea {
-    border: 1px solid #c3b8d9;
-    border-radius: 6px;
     padding: 0.55rem 0.75rem;
-    font-size: 1rem;
-    transition: box-shadow .15s ease, border .15s ease;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: border 0.15s, box-shadow 0.15s;
 }
+
+.form-group textarea { resize: vertical; min-height: 90px; }
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    border-color: #7d20d5;
-    box-shadow: 0 0 0 3px rgba(125,32,213,.12);
+    border-color: #6a0dad;
+    box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.15);
     outline: none;
 }
-.radio-group { display: flex; gap: 1rem; align-items: center; }
-.full-width  { grid-column: 1 / -1; }
 
-@media (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
+/* radios */
+.radio-group {
+    display: flex;
+    gap: 1.2rem;
+    padding-top: 0.25rem;
 }
+.radio-group input { accent-color: #6a0dad; }
 
-/* ==========================================================
+input[type="file"] { font-size: 0.85rem; }
+
+.btn-primary { margin-top: 1.25rem; }
+
+.link { margin-top: 1rem; }
+.link a {
+    font-size: 0.9rem;
+    color: #6a0dad;
+    text-decoration: none;
+}
+.link a:hover { text-decoration: underline; }
+
+/* ────────────────────────────────────────────────
    FOOTER
-   ========================================================== */
+   ──────────────────────────────────────────────── */
+
 .footer {
-    background: #f9f9f9;
-    padding: 1rem 0;
+    background: #f8f8f8;
+    border-top: 1px solid #e2e2e2;
+    width: 100%;
     margin-top: 3rem;
-    border-top: 1px solid #ececec;
+    flex-shrink: 0;
 }
+
 .footer-container {
     max-width: 1000px;
     margin: 0 auto;
+    padding: 1rem 1rem;
     text-align: center;
-}
-.footer p {
-    color: #6b6b6b;
-    font-size: 0.9rem;
-    margin: 0;
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.4;
 }
