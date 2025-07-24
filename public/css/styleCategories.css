@@ -1,0 +1,96 @@
+/* ────────────────────────────────────────────────
+   ESTILO PARA PÁGINA DE CATEGORÍAS
+   (views/categories/index.ejs)
+   ──────────────────────────────────────────────── */
+
+/* Contenedor “card” */
+.list-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-top: 2rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Encabezado con título y botón */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+/* Tabla básica */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.table thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e5e5e5;
+    font-weight: 600;
+}
+
+.table tbody td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Filas alternas */
+.table-striped tbody tr:nth-child(odd) {
+    background-color: #fafafa;
+}
+
+/* Hover en filas */
+.table-hover tbody tr:hover {
+    background-color: #f5f5ff;
+}
+
+/* Botones genéricos
+   (coinciden con .btn-primary / .btn-secondary / .btn-danger del resto del sitio) */
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1;
+    transition: background 0.15s ease-in-out;
+}
+
+.btn-primary { background: #6a0dad; color: #fff; }
+.btn-primary:hover { background: #5900a0; }
+
+.btn-secondary { background: #eeeeee; color: #333; }
+.btn-secondary:hover { background: #dddddd; }
+
+.btn-danger { background: #e74c3c; color: #fff; }
+.btn-danger:hover { background: #cf3b2b; }
+
+/* Tamaño pequeño (para los de la tabla) */
+.btn-sm {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+}
+
+/* Alineación derecha */
+.text-end { text-align: right; }
+
+/* Mensaje cuando no hay datos */
+.empty-state {
+    padding: 1.5rem 0;
+    color: #777;
+    font-style: italic;
+    text-align: center;
+}

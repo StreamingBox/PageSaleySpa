@@ -44,12 +44,20 @@ app.use('/clients',  clientsRoutes);
 app.use('/products', productsRoutes);
 app.use('/sales',    salesRoutes);
 app.use('/movements', movementsRoutes);
+app.use('/categories', require('./routes/categories'));
+
 
 /* --- Manejador de errores básico --- */
 app.use((err, req, res, next) => {
     console.error(err);
     res.status(500).send('Error interno del servidor');
 });
+
+app.use((err, req, res, next) => {
+    console.error(err);        // registro completo
+    res.status(500).send('Error interno del servidor');
+});
+
 
 /* --- Arranque del servidor --- */
 const PORT = process.env.PORT || 3000;

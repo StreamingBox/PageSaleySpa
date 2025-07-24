@@ -1,3 +1,4 @@
+/* models/movementsModel.js */
 const pool = require('../config/db');
 
 module.exports = {
@@ -7,19 +8,29 @@ module.exports = {
     findById: (id) =>
         pool.query('SELECT * FROM movements WHERE id = ?', [id]),
 
-    create: ({ date, type, amount, payment_type, category, description, account, attachment }) =>
+    create: ({
+                 date,
+                 type,
+                 amount,
+                 payment_type,
+                 category,
+                 description,
+                 account,
+                 attachment
+             }) =>
         pool.query(
-            `INSERT INTO movements 
-         (date,type,amount,payment_type,category,description,account,attachment)
-       VALUES (?,?,?,?,?,?,?,?)`,
+            `INSERT INTO movements
+       (date, type, amount, payment_type, category, description, account, attachment)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [date, type, amount, payment_type, category, description, account, attachment]
         ),
 
     update: (id, data) =>
         pool.query(
             `UPDATE movements SET
-         date=?, type=?, amount=?, payment_type=?, category=?, description=?, account=?, attachment=?
-       WHERE id=?`,
+         date = ?, type = ?, amount = ?, payment_type = ?,
+         category = ?, description = ?, account = ?, attachment = ?
+       WHERE id = ?`,
             [
                 data.date, data.type, data.amount, data.payment_type,
                 data.category, data.description, data.account, data.attachment,

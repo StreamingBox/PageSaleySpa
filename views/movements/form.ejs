@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>SaleySpa – <%= movement.id ? 'Editar Movimiento' : 'Nuevo Movimiento' %></title>
+
     <!-- CSS navegación -->
     <link rel="stylesheet" href="/css/styleNav.css">
     <!-- CSS movimientos y formularios -->
@@ -31,8 +32,8 @@
         </h2>
 
         <form action="<%= movement.id
-                ? '/movements/' + movement.id + '/edit'
-                : '/movements/new' %>"
+                ? '/movements/' + movement.id + '/edit'   /* ruta para actualizar */
+                : '/movements/new'                        /* ruta para crear     */ %>"
               method="POST"
               enctype="multipart/form-data">
 
@@ -42,7 +43,10 @@
                 <!-- Fecha -->
                 <div class="form-group">
                     <label for="date">Fecha</label>
-                    <input type="date" id="date" name="date" required
+                    <input type="date"
+                           id="date"
+                           name="date"
+                           required
                            value="<%= movement.date?.toISOString().split('T')[0] || '' %>" />
                 </div>
 
@@ -50,17 +54,27 @@
                 <div class="form-group">
                     <label>Tipo</label>
                     <div class="radio-group">
-                        <label><input type="radio" name="type" value="gasto"
-                                    <%= movement.type==='gasto' ? 'checked' : '' %> /> Gasto</label>
-                        <label><input type="radio" name="type" value="ingreso"
-                                    <%= movement.type==='ingreso' ? 'checked' : '' %> /> Ingreso</label>
+                        <label>
+                            <input type="radio" name="type" value="gasto"
+                                    <%= movement.type === 'gasto' ? 'checked' : '' %> />
+                            Gasto
+                        </label>
+                        <label>
+                            <input type="radio" name="type" value="ingreso"
+                                    <%= movement.type === 'ingreso' ? 'checked' : '' %> />
+                            Ingreso
+                        </label>
                     </div>
                 </div>
 
                 <!-- Valor -->
                 <div class="form-group">
                     <label for="amount">Valor</label>
-                    <input type="number" id="amount" name="amount" step="0.01" required
+                    <input type="number"
+                           id="amount"
+                           name="amount"
+                           step="0.01"
+                           required
                            value="<%= movement.amount || '' %>" />
                 </div>
 
@@ -68,34 +82,29 @@
                 <div class="form-group">
                     <label for="payment_type">Tipo de pago</label>
                     <select id="payment_type" name="payment_type" required>
-                        <option value="efectivo"
-                                <%= movement.payment_type==='efectivo' ? 'selected' : '' %>>
-                            Efectivo
-                        </option>
-                        <option value="tarjeta"
-                                <%= movement.payment_type==='tarjeta' ? 'selected' : '' %>>
-                            Tarjeta
-                        </option>
-                        <option value="transferencia"
-                                <%= movement.payment_type==='transferencia' ? 'selected' : '' %>>
-                            Transferencia
-                        </option>
-                        <option value="cheque"
-                                <%= movement.payment_type==='cheque' ? 'selected' : '' %>>
-                            Cheque
-                        </option>
-                        <option value="otro"
-                                <%= movement.payment_type==='otro' ? 'selected' : '' %>>
-                            Otro
-                        </option>
+                        <option value="efectivo"      <%= movement.payment_type === 'efectivo'      ? 'selected' : '' %>>Efectivo</option>
+                        <option value="tarjeta"       <%= movement.payment_type === 'tarjeta'       ? 'selected' : '' %>>Tarjeta</option>
+                        <option value="transferencia" <%= movement.payment_type === 'transferencia' ? 'selected' : '' %>>Transferencia</option>
+                        <option value="cheque"        <%= movement.payment_type === 'cheque'        ? 'selected' : '' %>>Cheque</option>
+                        <option value="otro"          <%= movement.payment_type === 'otro'          ? 'selected' : '' %>>Otro</option>
                     </select>
                 </div>
 
-                <!-- Categoría -->
+                <!-- Categoría (select dinámico) -->
                 <div class="form-group full-width">
                     <label for="category">Categoría</label>
-                    <input type="text" id="category" name="category"
-                           value="<%= movement.category || '' %>" />
+                    <select id="category" name="category" class="form-select" required>
+                        <% categories.forEach(c => { %>
+                            <option value="<%= c.name %>"
+                                    <%= movement.category === c.name ? 'selected' : '' %>>
+                                <%= c.name %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <small class="form-text">
+                        ¿No encuentras la categoría?
+                        <a href="/categories/new" target="_blank">Créala aquí</a>.
+                    </small>
                 </div>
 
                 <!-- Descripción -->
@@ -107,7 +116,9 @@
                 <!-- Cuenta -->
                 <div class="form-group">
                     <label for="account">Cuenta</label>
-                    <input type="text" id="account" name="account"
+                    <input type="text"
+                           id="account"
+                           name="account"
                            value="<%= movement.account || '' %>" />
                 </div>
 

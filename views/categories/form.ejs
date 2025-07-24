@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SaleySpa – <%= category.id ? 'Editar categoría' : 'Nueva categoría' %></title>
+
+    <!-- CSS navegación -->
+    <link rel="stylesheet" href="/css/styleNav.css">
+    <!-- CSS formularios (usa el mismo que Movements si ya formatea tus cards/botones) -->
+    <link rel="stylesheet" href="/css/styleMovements.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="site-nav">
+    <div class="nav-container">
+        <a href="/"           class="nav-link">Inicio</a>
+        <a href="/clients"    class="nav-link">Clientes</a>
+        <a href="/products"   class="nav-link">Productos</a>
+        <a href="/sales"      class="nav-link">Ventas</a>
+        <a href="/movements"  class="nav-link">Movimientos</a>
+        <a href="/categories" class="nav-link active">Categorías</a>
+        <a href="/logout"     class="nav-link">Salir</a>
+    </div>
+</nav>
+
+<!-- CONTENIDO FORMULARIO -->
+<div class="container">
+    <div class="edit-card">
+        <h2 class="card-title">
+            <%= category.id ? 'Editar categoría' : 'Nueva categoría' %>
+        </h2>
+
+        <form action="<%= category.id ? '/categories/' + category.id : '/categories' %>" method="POST">
+            <div class="form-group">
+                <label class="form-label">Nombre</label>
+                <input class="form-control"
+                       name="name"
+                       required
+                       value="<%= category.name || '' %>">
+            </div>
+
+            <button class="btn-primary">Guardar</button>
+            <a href="/categories" class="btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-container">
+        <p>© <%= new Date().getFullYear() %> SaleySpa. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+</body>
+</html>
