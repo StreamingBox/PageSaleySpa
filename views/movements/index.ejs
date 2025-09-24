@@ -18,6 +18,20 @@
             <a href="/movements/new" class="btn-primary">Nuevo movimiento</a>
         </div>
 
+        <!-- Filtros -->
+        <form action="/movements" method="GET" class="filters">
+            <div class="filter-item">
+                <label for="start">Desde</label>
+                <input type="date" id="start" name="start" value="<%= (filters && filters.start) || '' %>">
+            </div>
+            <div class="filter-item">
+                <label for="end">Hasta</label>
+                <input type="date" id="end" name="end" value="<%= (filters && filters.end) || '' %>">
+            </div>
+            <button type="submit" class="btn-secondary">Filtrar</button>
+            <a class="btn-link" href="/movements">Limpiar</a>
+        </form>
+
         <% if (movements.length === 0) { %>
             <p class="empty-state">No hay movimientos registrados.</p>
         <% } else { %>
@@ -36,7 +50,7 @@
                 <tbody>
                 <% movements.forEach(mov => { %>
                     <tr>
-                        <td><%= mov.date.toISOString().split('T')[0] %></td>
+                        <td><%= (mov.date instanceof Date ? mov.date.toISOString().split('T')[0] : mov.date) %></td>
                         <td><%= mov.type === 'gasto' ? 'Gasto' : 'Ingreso' %></td>
                         <td>$<%= Number(mov.amount).toLocaleString('es-CO') %></td>
                         <td><%= mov.payment_type %></td>
@@ -52,6 +66,44 @@
                 <% }) %>
                 </tbody>
             </table>
+
+            <!-- ✅ Paginación debajo de la tabla (usa DIV, no NAV) -->
+            <% if (pagination && pagination.totalPages > 1) { %>
+                <div class="pagination">
+                    <%
+                        const q = new URLSearchParams();
+                        if (filters && filters.start) q.set('start', filters.start);
+                        if (filters && filters.end)   q.set('end', filters.end);
+                        function linkTo(p) {
+                            const qp = new URLSearchParams(q.toString());
+                            qp.set('page', String(p));
+                            return '/movements?' + qp.toString();
+                        }
+                        const p  = pagination.page;
+                        const tp = pagination.totalPages;
+                    %>
+
+                    <% if (p > 1) { %>
+                        <a class="btn-secondary" href="<%= linkTo(p - 1) %>">« Anterior</a>
+                    <% } else { %>
+                        <span class="btn-secondary disabled">« Anterior</span>
+                    <% } %>
+
+                    <% for (let i = 1; i <= tp; i++) { %>
+                        <% if (i === p) { %>
+                            <span class="btn-primary current"><%= i %></span>
+                        <% } else { %>
+                            <a class="btn-secondary" href="<%= linkTo(i) %>"><%= i %></a>
+                        <% } %>
+                    <% } %>
+
+                    <% if (p < tp) { %>
+                        <a class="btn-secondary" href="<%= linkTo(p + 1) %>">Siguiente »</a>
+                    <% } else { %>
+                        <span class="btn-secondary disabled">Siguiente »</span>
+                    <% } %>
+                </div>
+            <% } %>
         <% } %>
     </div>
 </div>

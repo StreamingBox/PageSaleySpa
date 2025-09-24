@@ -1,6 +1,6 @@
-/* ────────────────────────────────────────────────
+/* =====================
    ESTILOS GENERALES
-   ──────────────────────────────────────────────── */
+   ===================== */
 
 html, body {
     height: 100%;
@@ -16,9 +16,9 @@ body {
 
 .container {
     max-width: 1000px;
-    margin: 2rem auto;
+    margin: 72px auto 2rem;   /* deja espacio debajo del nav fijo */
     padding: 0 1rem;
-    flex: 1 0 auto;                 /* empuja el footer al fondo */
+    flex: 1 0 auto;           /* empuja el footer al fondo */
 }
 
 .card-title {
@@ -29,9 +29,9 @@ body {
     text-align: center;
 }
 
-/* ────────────────────────────────────────────────
+/* =====================
    BOTONES
-   ──────────────────────────────────────────────── */
+   ===================== */
 
 .btn-primary,
 .btn-secondary,
@@ -58,9 +58,9 @@ body {
 
 .btn-sm { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
 
-/* ────────────────────────────────────────────────
-   LISTA / TABLA (index de movimientos & categorías)
-   ──────────────────────────────────────────────── */
+/* =====================
+   LISTA / TABLA
+   ===================== */
 
 .list-card {
     background: #ffffff;
@@ -106,9 +106,9 @@ body {
     text-align: center;
 }
 
-/* ────────────────────────────────────────────────
-   FORMULARIOS (nuevo / editar movimiento)
-   ──────────────────────────────────────────────── */
+/* =====================
+   FORMULARIOS
+   ===================== */
 
 .edit-card {
     background: #ffffff;
@@ -176,9 +176,43 @@ input[type="file"] { font-size: 0.85rem; }
 }
 .link a:hover { text-decoration: underline; }
 
-/* ────────────────────────────────────────────────
+/* =====================
+   FILTROS & PAGINACIÓN
+   ===================== */
+
+.filters {
+    margin: 12px 0 8px;
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+.filters label {
+    display: block;
+    font-size: .85rem;
+    margin-bottom: 4px;
+}
+
+.pagination {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.pagination .btn-secondary,
+.pagination .btn-primary {
+    min-width: 36px;
+    text-align: center;
+    display: inline-block;
+}
+.pagination .current { pointer-events: none; }
+.pagination .disabled { opacity: .5; pointer-events: none; }
+
+/* =====================
    FOOTER
-   ──────────────────────────────────────────────── */
+   ===================== */
 
 .footer {
     background: #f8f8f8;
@@ -197,3 +231,25 @@ input[type="file"] { font-size: 0.85rem; }
     color: #555;
     line-height: 1.4;
 }
+
+.btn-link {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    background: transparent;
+    color: #6a0dad;
+    border: 1px dashed #6a0dad;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-link:hover {
+    background: rgba(106, 13, 173, 0.08);
+    border-style: solid;
+    text-decoration: none;
+    color: #4b0082;
+}
+
+
