@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>SaleySpa – <%= movement.id ? 'Editar Movimiento' : 'Nuevo Movimiento' %></title>
-
     <link rel="stylesheet" href="/css/styleNav.css">
     <link rel="stylesheet" href="/css/styleMovements.css">
 </head>
@@ -24,12 +23,10 @@
 
 <div class="container">
     <div class="edit-card">
-        <h2 class="card-title">
-            <%= movement.id ? 'Editar Movimiento' : 'Nuevo Movimiento' %>
-        </h2>
+        <h2 class="card-title"><%= movement.id ? 'Editar Movimiento' : 'Nuevo Movimiento' %></h2>
 
-        <form action="<%= movement.id ? '/movements/' + movement.id + '/edit'
-                : '/movements/new' %>"
+        <!-- IMPORTANTE: usar _method en la query para multipart/form-data -->
+        <form action="<%= movement.id ? ('/movements/' + movement.id + '?_method=PUT') : '/movements/new' %>"
               method="POST"
               enctype="multipart/form-data">
 
@@ -40,36 +37,33 @@
                 <div class="form-group">
                     <label for="date">Fecha</label>
                     <input type="date" id="date" name="date" required
-                           value="<%= movement.date?.toISOString().split('T')[0] || '' %>" />
+                           value="<%= (movement.date && movement.date.toISOString ? movement.date.toISOString().split('T')[0] : (movement.date || '')) %>" />
                 </div>
 
                 <!-- Tipo -->
                 <div class="form-group">
                     <label>Tipo</label>
                     <div class="radio-group">
-                        <label><input type="radio" name="type" value="gasto"
-                                    <%= movement.type === 'gasto' ? 'checked' : '' %>> Gasto</label>
-                        <label><input type="radio" name="type" value="ingreso"
-                                    <%= movement.type === 'ingreso' ? 'checked' : '' %>> Ingreso</label>
+                        <label><input type="radio" name="type" value="gasto"   <%= movement.type === 'gasto'   ? 'checked' : '' %>> Gasto</label>
+                        <label><input type="radio" name="type" value="ingreso" <%= movement.type === 'ingreso' ? 'checked' : '' %>> Ingreso</label>
                     </div>
                 </div>
 
                 <!-- Valor -->
                 <div class="form-group">
                     <label for="amount">Valor</label>
-                    <input type="number" id="amount" name="amount" step="0.01" required
-                           value="<%= movement.amount || '' %>" />
+                    <input type="number" id="amount" name="amount" step="0.01" required value="<%= movement.amount || '' %>" />
                 </div>
 
-                <!-- Tipo de pago (actualizado) -->
+                <!-- Tipo de pago -->
                 <div class="form-group">
                     <label for="payment_type">Tipo de pago</label>
                     <select id="payment_type" name="payment_type" required>
-                        <option value="llave"      <%= movement.payment_type === 'llave'      ? 'selected' : '' %>>Llave</option>
-                        <option value="nequi"      <%= movement.payment_type === 'nequi'      ? 'selected' : '' %>>Nequi</option>
-                        <option value="daviplata"  <%= movement.payment_type === 'daviplata'  ? 'selected' : '' %>>Daviplata</option>
-                        <option value="colpatria"  <%= movement.payment_type === 'colpatria'  ? 'selected' : '' %>>Colpatria</option>
-                        <option value="efectivo"   <%= movement.payment_type === 'efectivo'   ? 'selected' : '' %>>Efectivo</option>
+                        <option value="llave"     <%= movement.payment_type === 'llave'     ? 'selected' : '' %>>Llave</option>
+                        <option value="nequi"     <%= movement.payment_type === 'nequi'     ? 'selected' : '' %>>Nequi</option>
+                        <option value="daviplata" <%= movement.payment_type === 'daviplata' ? 'selected' : '' %>>Daviplata</option>
+                        <option value="colpatria" <%= movement.payment_type === 'colpatria' ? 'selected' : '' %>>Colpatria</option>
+                        <option value="efectivo"  <%= movement.payment_type === 'efectivo'  ? 'selected' : '' %>>Efectivo</option>
                     </select>
                 </div>
 
@@ -78,15 +72,11 @@
                     <label for="category">Categoría</label>
                     <select id="category" name="category" class="form-select" required>
                         <% categories.forEach(c => { %>
-                            <option value="<%= c.name %>"
-                                    <%= movement.category === c.name ? 'selected' : '' %>>
-                                <%= c.name %>
-                            </option>
+                            <option value="<%= c.name %>" <%= movement.category === c.name ? 'selected' : '' %>><%= c.name %></option>
                         <% }) %>
                     </select>
                     <small class="form-text">
-                        ¿No encuentras la categoría?
-                        <a href="/categories/new" target="_blank">Créala aquí</a>.
+                        ¿No encuentras la categoría? <a href="/categories/new" target="_blank">Créala aquí</a>.
                     </small>
                 </div>
 
@@ -102,8 +92,7 @@
                     <input type="file" id="attachment" name="attachment" />
                     <% if (movement.attachment) { %>
                         <p class="text-sm">
-                            Actual:
-                            <a href="/uploads/<%= movement.attachment %>" target="_blank"><%= movement.attachment %></a>
+                            Actual: <a href="/uploads/<%= movement.attachment %>" target="_blank"><%= movement.attachment %></a>
                         </p>
                     <% } %>
                 </div>
