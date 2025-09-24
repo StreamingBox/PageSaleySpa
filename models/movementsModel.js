@@ -75,3 +75,22 @@ module.exports = {
     delete: (id) =>
         pool.query('DELETE FROM movements WHERE id = ?', [id])
 };
+
+// === RESÚMENES / REPORTES ===
+module.exports.totalsByTypeInRange = async (startDate, endDate) => {
+    const [rows] = await pool.query(
+        `SELECT type, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total
+       FROM movements
+      WHERE date BETWEEN ? AND ?
+      GROUP BY type`,
+        [startDate, endDate]
+    );
+
+    // Normaliza a objeto { ingreso: {count,total}, gasto: {count,total} }
+    const out = { ingreso: { count: 0, total: 0 }, gasto: { count: 0, total: 0 } };
+    for (const r of rows) {
+        if (r.type === 'ingreso') out.ingreso = { count: r.count, total: Number(r.total) };
+        if (r.type === 'gasto')   out.gasto   = { count: r.count, total: Number(r.total) };
+    }
+    return out;
+};

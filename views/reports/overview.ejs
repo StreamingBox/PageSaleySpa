@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaleySpa – Resumen de Movimientos</title>
+
+    <link rel="stylesheet" href="/css/styleNav.css">
+    <link rel="stylesheet" href="/css/styleReports.css">
+</head>
+<body>
+
+<!-- Navbar fijo -->
+<%- include('../partials/navbar') %>
+
+<div class="container">
+    <div class="card">
+        <h1 class="title">Resumen de Movimientos</h1>
+
+        <!-- Filtros -->
+        <form action="/reports/overview" method="GET" class="filters">
+            <div class="filter-item">
+                <label for="start">Desde</label>
+                <input
+                        type="date"
+                        id="start"
+                        name="start"
+                        class="input"
+                        value="<%= (filters && filters.start) || '' %>"
+                >
+            </div>
+
+            <div class="filter-item">
+                <label for="end">Hasta</label>
+                <input
+                        type="date"
+                        id="end"
+                        name="end"
+                        class="input"
+                        value="<%= (filters && filters.end) || '' %>"
+                >
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-filter">Filtrar</button>
+                <a href="/reports/overview" class="btn btn-clear">Limpiar</a>
+            </div>
+        </form>
+
+        <!-- Rango activo -->
+        <div class="subtle">
+            Mes actual: <strong><%= currentRange.start %></strong> a <strong><%= currentRange.end %></strong>
+            &nbsp;|&nbsp;
+            Mes anterior: <strong><%= previousRange.start %></strong> a <strong><%= previousRange.end %></strong>
+        </div>
+
+        <!-- KPIs: Mes actual -->
+        <div class="kpi-grid" style="margin-top:10px;">
+            <!-- Ingresos actuales -->
+            <section class="kpi">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Mes actual — Ingresos</h3>
+                    <span class="tooltip-text">
+              Total de dinero que entró en el rango de fechas del mes actual
+              (suma de todos los movimientos con tipo <b>ingreso</b>).
+            </span>
+                </div>
+                <div class="kpi-value">$ <%= Number(curIngresos).toLocaleString('es-CO') %></div>
+                <p class="kpi-sub"><%= cur.ingreso.count %> movimientos</p>
+            </section>
+
+            <!-- Gastos actuales -->
+            <section class="kpi">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Mes actual — Gastos</h3>
+                    <span class="tooltip-text">
+              Total de dinero que salió en el mes actual
+              (suma de todos los movimientos con tipo <b>gasto</b>).
+            </span>
+                </div>
+                <div class="kpi-value">$ <%= Number(curGastos).toLocaleString('es-CO') %></div>
+                <p class="kpi-sub"><%= cur.gasto.count %> movimientos</p>
+            </section>
+
+            <!-- Balance actual -->
+            <section class="kpi">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Mes actual — Balance</h3>
+                    <span class="tooltip-text">
+              Diferencia entre <b>Ingresos</b> y <b>Gastos</b> del mes actual.
+              Si es positivo, hubo más ingresos que gastos.
+            </span>
+                </div>
+                <div class="kpi-value">$ <%= Number(curBalance).toLocaleString('es-CO') %></div>
+                <p class="kpi-sub">Ingresos − Gastos</p>
+            </section>
+
+            <!-- Comparación -->
+            <section class="kpi highlight">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Comparación vs mes anterior</h3>
+                    <span class="tooltip-text">
+              Variación porcentual del <b>balance</b> actual frente al balance del mes anterior.
+              <br>Fórmula: ((Balance actual − Balance anterior) / |Balance anterior|) × 100.
+            </span>
+                </div>
+                <div class="kpi-delta <%= deltaPct >= 0 ? 'pos' : 'neg' %>">
+                    <%= deltaPct >= 0 ? '▲' : '▼' %> <%= Math.abs(deltaPct).toFixed(1) %> %
+                </div>
+                <p class="kpi-sub">Balance anterior: $ <%= Number(prevBalance).toLocaleString('es-CO') %></p>
+            </section>
+        </div>
+
+        <!-- KPIs: Mes anterior -->
+        <div class="kpi-grid" style="margin-top:12px;">
+            <!-- Ingresos anteriores -->
+            <section class="kpi">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Mes anterior — Ingresos</h3>
+                    <span class="tooltip-text">
+              Total de ingresos del mes inmediatamente anterior al actual.
+            </span>
+                </div>
+                <div class="kpi-value">$ <%= Number(prevIngresos).toLocaleString('es-CO') %></div>
+                <p class="kpi-sub"><%= prev.ingreso.count %> movimientos</p>
+            </section>
+
+            <!-- Gastos anteriores -->
+            <section class="kpi">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Mes anterior — Gastos</h3>
+                    <span class="tooltip-text">
+              Total de egresos del mes inmediatamente anterior.
+            </span>
+                </div>
+                <div class="kpi-value">$ <%= Number(prevGastos).toLocaleString('es-CO') %></div>
+                <p class="kpi-sub"><%= prev.gasto.count %> movimientos</p>
+            </section>
+
+            <!-- Balance anterior -->
+            <section class="kpi">
+                <div class="tooltip" tabindex="0">
+                    <h3 class="kpi-title">Mes anterior — Balance</h3>
+                    <span class="tooltip-text">
+              Diferencia entre <b>Ingresos</b> y <b>Gastos</b> del mes anterior.
+            </span>
+                </div>
+                <div class="kpi-value">$ <%= Number(prevBalance).toLocaleString('es-CO') %></div>
+                <p class="kpi-sub">Ingresos − Gastos</p>
+            </section>
+
+            <!-- Celda vacía para cuadrícula -->
+            <section class="kpi" style="background:transparent;border:1px dashed transparent;"></section>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-container">
+        © <%= new Date().getFullYear() %> SaleySpa. Todos los derechos reservados.
+    </div>
+</footer>
+
+</body>
+</html>

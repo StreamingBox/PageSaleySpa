@@ -4,11 +4,12 @@
 
     <div class="nav-menu" id="nav-menu">
         <a href="/"           class="nav-link <%= path === '/' ? 'active' : '' %>">Inicio</a>
-        <a href="/clients"    class="nav-link <%= path === '/clients' ? 'active' : '' %>">Clientes</a>
-        <a href="/products"   class="nav-link <%= path === '/products' ? 'active' : '' %>">Productos</a>
-        <a href="/sales"      class="nav-link <%= path === '/sales' ? 'active' : '' %>">Ventas</a>
-        <a href="/movements"  class="nav-link <%= path === '/movements' ? 'active' : '' %>">Movimientos</a>
-        <a href="/reports"    class="nav-link <%= path === '/reports' ? 'active' : '' %>">Reportes</a>
+        <a href="/clients"    class="nav-link <%= path.startsWith('/clients') ? 'active' : '' %>">Clientes</a>
+        <a href="/products"   class="nav-link <%= path.startsWith('/products') ? 'active' : '' %>">Productos</a>
+        <a href="/sales"      class="nav-link <%= path.startsWith('/sales') ? 'active' : '' %>">Ventas</a>
+        <a href="/movements"  class="nav-link <%= path.startsWith('/movements') ? 'active' : '' %>">Movimientos</a>
+        <!-- ✅ Enlace directo al resumen -->
+        <a href="/reports/overview" class="nav-link <%= path.startsWith('/reports') ? 'active' : '' %>">Resumen</a>
         <a href="/logout"     class="nav-link">Salir</a>
     </div>
 
