@@ -1,0 +1,677 @@
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const slugify = require('slugify');
+const { subDays } = require('date-fns');
+const { asyncHandler } = require('../../utils/asyncHandler');
+const { sendData, sendError } = require('../../utils/apiResponse');
+const { isApiAuth } = require('../../middleware/apiAuth');
+const { parseIsoDate, toIsoDate } = require('../../utils/dateRange');
+const { renderInvoicePdf } = require('../../utils/invoicePdf');
+const {
+    cancelAppointment,
+    confirmAppointment,
+    createAppointment,
+    createAppointmentBlock,
+    deleteAppointmentBlock,
+    getAppointmentSettings,
+    getAppointmentSummary,
+    listAppointmentAvailability,
+    listAppointments,
+    updateAppointmentSettings
+} = require('../../services/appointmentsService');
+const {
+    createCategory,
+    deleteCategory,
+    getCategoryById,
+    listCategories,
+    updateCategory
+} = require('../../services/categoriesService');
+const {
+    createClient,
+    getClientByHash,
+    getClientProfileByHash,
+    listClients,
+    updateClient,
+    updateClientAvatar
+} = require('../../services/clientsService');
+const { getDashboardSummary } = require('../../services/dashboardService');
+const {
+    createMovement,
+    deleteMovement,
+    getMovementById,
+    listMovements,
+    updateMovement
+} = require('../../services/movementsService');
+const {
+    createProduct,
+    getProductByHash,
+    listProducts,
+    updateProduct
+} = require('../../services/productsService');
+const {
+    createSale,
+    deactivateSale,
+    getSaleById,
+    listSales,
+    updateSale
+} = require('../../services/salesService');
+const {
+    createInvoice,
+    getInvoiceById,
+    listInvoiceCandidates,
+    listInvoices,
+    markInvoicePaid
+} = require('../../services/invoicesService');
+
+const router = express.Router();
+
+const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+const allowedMimeTypes = new Set([
+    'application/pdf',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/png',
+    'image/webp'
+]);
+
+const storage = multer.diskStorage({
+    destination: uploadsDir,
+    filename: (_req, file, cb) => {
+        const extension = path.extname(file.originalname);
+        const basename = path.basename(file.originalname, extension);
+        const safeName =
+            slugify(basename, { lower: true, strict: true }) || 'adjunto';
+
+        cb(null, `${Date.now()}-${safeName}${extension}`);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024
+    },
+    fileFilter: (_req, file, cb) => {
+        if (allowedMimeTypes.has(file.mimetype)) {
+            cb(null, true);
+            return;
+        }
+
+        cb(new Error('Tipo de archivo no permitido'));
+    }
+});
+
+function validateSaleDate(soldAt) {
+    const parsedSaleDate = parseIsoDate(soldAt);
+
+    if (!parsedSaleDate) {
+        return 'La fecha de venta no es válida';
+    }
+
+    const today = parseIsoDate(toIsoDate(new Date()));
+    const minDate = subDays(today, 30);
+
+    if (parsedSaleDate < minDate || parsedSaleDate > today) {
+        return `La fecha de venta debe estar entre ${toIsoDate(minDate)} y ${toIsoDate(today)}`;
+    }
+
+    return '';
+}
+
+router.use(isApiAuth);
+
+router.get(
+    '/session',
+    asyncHandler(async (req, res) => {
+        sendData(res, req.session.user);
+    })
+);
+
+router.get(
+    '/dashboard',
+    asyncHandler(async (req, res) => {
+        const data = await getDashboardSummary({
+            start: req.query.start,
+            end: req.query.end,
+            clientId: req.query.client_id || '',
+            paid: req.query.paid || ''
+        });
+
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/clients',
+    asyncHandler(async (req, res) => {
+        const data = await listClients({ search: req.query.search || '' });
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/clients/:hash',
+    asyncHandler(async (req, res) => {
+        const client = await getClientByHash(req.params.hash);
+        if (!client) return sendError(res, 404, 'Cliente no encontrado');
+
+        sendData(res, client);
+    })
+);
+
+router.get(
+    '/clients/:hash/profile',
+    asyncHandler(async (req, res) => {
+        const profile = await getClientProfileByHash(req.params.hash);
+        if (!profile) return sendError(res, 404, 'Cliente no encontrado');
+
+        sendData(res, profile);
+    })
+);
+
+router.post(
+    '/clients',
+    asyncHandler(async (req, res) => {
+        const { name, phone, address, complemento } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        const client = await createClient({
+            name: String(name).trim(),
+            phone: phone || '',
+            address: address || '',
+            complemento: complemento || ''
+        });
+
+        res.status(201);
+        sendData(res, client);
+    })
+);
+
+router.put(
+    '/clients/:hash',
+    asyncHandler(async (req, res) => {
+        const { name, phone, address, complemento } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        const client = await updateClient(req.params.hash, {
+            name: String(name).trim(),
+            phone: phone || '',
+            address: address || '',
+            complemento: complemento || ''
+        });
+
+        if (!client) return sendError(res, 404, 'Cliente no encontrado');
+        sendData(res, client);
+    })
+);
+
+router.put(
+    '/clients/:hash/avatar',
+    asyncHandler(async (req, res) => {
+        const client = await updateClientAvatar(
+            req.params.hash,
+            String(req.body?.avatar_emoji || '').trim()
+        );
+
+        if (!client) return sendError(res, 404, 'Cliente no encontrado');
+        sendData(res, client);
+    })
+);
+
+router.get(
+    '/appointments/settings',
+    asyncHandler(async (_req, res) => {
+        const data = await getAppointmentSettings();
+        sendData(res, data);
+    })
+);
+
+router.put(
+    '/appointments/settings',
+    asyncHandler(async (req, res) => {
+        const data = await updateAppointmentSettings(req.body || {});
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/appointments/summary',
+    asyncHandler(async (req, res) => {
+        const data = await getAppointmentSummary(req.query.date || '');
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/appointments/availability',
+    asyncHandler(async (req, res) => {
+        const data = await listAppointmentAvailability(
+            req.query.date || '',
+            req.query.product_id || '',
+            req.query.duration_minutes || ''
+        );
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/appointments',
+    asyncHandler(async (req, res) => {
+        const data = await listAppointments({
+            date: req.query.date || '',
+            status: req.query.status || '',
+            startDate: req.query.start_date || '',
+            limit: req.query.limit || ''
+        });
+        sendData(res, data);
+    })
+);
+
+router.post(
+    '/appointments',
+    asyncHandler(async (req, res) => {
+        const appointment = await createAppointment(req.body || {});
+        res.status(201);
+        sendData(res, appointment);
+    })
+);
+
+router.patch(
+    '/appointments/:id/confirm',
+    asyncHandler(async (req, res) => {
+        const appointment = await confirmAppointment(req.params.id);
+        if (!appointment) return sendError(res, 404, 'Cita no encontrada');
+        sendData(res, appointment);
+    })
+);
+
+router.patch(
+    '/appointments/:id/cancel',
+    asyncHandler(async (req, res) => {
+        const appointment = await cancelAppointment(
+            req.params.id,
+            req.body?.reason || ''
+        );
+
+        if (!appointment) return sendError(res, 404, 'Cita no encontrada');
+        sendData(res, appointment);
+    })
+);
+
+router.post(
+    '/appointments/blocks',
+    asyncHandler(async (req, res) => {
+        const data = await createAppointmentBlock(req.body || {});
+        res.status(201);
+        sendData(res, data);
+    })
+);
+
+router.delete(
+    '/appointments/blocks/:id',
+    asyncHandler(async (req, res) => {
+        const data = await deleteAppointmentBlock(req.params.id, req.query.date || '');
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/products',
+    asyncHandler(async (req, res) => {
+        const data = await listProducts({ search: req.query.search || '' });
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/products/:hash',
+    asyncHandler(async (req, res) => {
+        const product = await getProductByHash(req.params.hash);
+        if (!product) return sendError(res, 404, 'Producto no encontrado');
+
+        sendData(res, product);
+    })
+);
+
+router.post(
+    '/products',
+    asyncHandler(async (req, res) => {
+        const { name, price, duration_minutes } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+            return sendError(res, 400, 'El precio debe ser mayor a cero');
+        }
+
+        if (!Number.isFinite(Number(duration_minutes)) || Number(duration_minutes) <= 0) {
+            return sendError(res, 400, 'La duracion debe ser mayor a cero');
+        }
+
+        const product = await createProduct({
+            name: String(name).trim(),
+            price: Number(price),
+            duration_minutes: Number(duration_minutes)
+        });
+
+        res.status(201);
+        sendData(res, product);
+    })
+);
+
+router.put(
+    '/products/:hash',
+    asyncHandler(async (req, res) => {
+        const { name, price, duration_minutes } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+            return sendError(res, 400, 'El precio debe ser mayor a cero');
+        }
+
+        if (!Number.isFinite(Number(duration_minutes)) || Number(duration_minutes) <= 0) {
+            return sendError(res, 400, 'La duracion debe ser mayor a cero');
+        }
+
+        const product = await updateProduct(req.params.hash, {
+            name: String(name).trim(),
+            price: Number(price),
+            duration_minutes: Number(duration_minutes)
+        });
+
+        if (!product) return sendError(res, 404, 'Producto no encontrado');
+        sendData(res, product);
+    })
+);
+
+router.get(
+    '/categories',
+    asyncHandler(async (req, res) => {
+        const data = await listCategories({ search: req.query.search || '' });
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/categories/:id',
+    asyncHandler(async (req, res) => {
+        const category = await getCategoryById(req.params.id);
+        if (!category) return sendError(res, 404, 'Categoría no encontrada');
+
+        sendData(res, category);
+    })
+);
+
+router.post(
+    '/categories',
+    asyncHandler(async (req, res) => {
+        const { name } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        const category = await createCategory({ name: String(name).trim() });
+        res.status(201);
+        sendData(res, category);
+    })
+);
+
+router.put(
+    '/categories/:id',
+    asyncHandler(async (req, res) => {
+        const { name } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        const category = await updateCategory(req.params.id, {
+            name: String(name).trim()
+        });
+
+        if (!category) return sendError(res, 404, 'Categoría no encontrada');
+        sendData(res, category);
+    })
+);
+
+router.delete(
+    '/categories/:id',
+    asyncHandler(async (req, res) => {
+        await deleteCategory(req.params.id);
+        res.status(204).end();
+    })
+);
+
+router.get(
+    '/sales',
+    asyncHandler(async (req, res) => {
+        const data = await listSales({
+            start: req.query.start,
+            end: req.query.end,
+            clientId: req.query.client_id || '',
+            paid: req.query.paid || ''
+        });
+
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/sales/:id',
+    asyncHandler(async (req, res) => {
+        const sale = await getSaleById(req.params.id);
+        if (!sale) return sendError(res, 404, 'Venta no encontrada');
+
+        sendData(res, sale);
+    })
+);
+
+router.get(
+    '/invoices',
+    asyncHandler(async (req, res) => {
+        const data = await listInvoices({
+            start: req.query.start,
+            end: req.query.end,
+            clientId: req.query.client_id || '',
+            status: req.query.status || '',
+            search: req.query.search || ''
+        });
+
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/invoices/candidates',
+    asyncHandler(async (req, res) => {
+        const data = await listInvoiceCandidates(req.query.client_id);
+        sendData(res, data);
+    })
+);
+
+router.post(
+    '/invoices',
+    asyncHandler(async (req, res) => {
+        const invoice = await createInvoice(req.body || {});
+        res.status(201);
+        sendData(res, invoice);
+    })
+);
+
+router.patch(
+    '/invoices/:publicId/pay',
+    asyncHandler(async (req, res) => {
+        const invoice = await markInvoicePaid(req.params.publicId, req.body || {});
+        sendData(res, invoice);
+    })
+);
+
+router.get(
+    '/invoices/:publicId/pdf',
+    asyncHandler(async (req, res) => {
+        const invoice = await getInvoiceById(req.params.publicId);
+        if (!invoice) return sendError(res, 404, 'Factura no encontrada');
+
+        const download = req.query.download === '1';
+        const safeFileName = `${invoice.invoice_number || 'factura'}.pdf`;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+            'Content-Disposition',
+            `${download ? 'attachment' : 'inline'}; filename="${safeFileName}"`
+        );
+
+        renderInvoicePdf(invoice, res);
+    })
+);
+
+router.get(
+    '/invoices/:publicId',
+    asyncHandler(async (req, res) => {
+        const invoice = await getInvoiceById(req.params.publicId);
+        if (!invoice) return sendError(res, 404, 'Factura no encontrada');
+
+        sendData(res, invoice);
+    })
+);
+
+router.post(
+    '/sales',
+    asyncHandler(async (req, res) => {
+        const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
+        const missing = required.find(field => !req.body?.[field]);
+        if (missing) return sendError(res, 400, `Falta el campo ${missing}`);
+
+        const saleDateError = validateSaleDate(req.body.sold_at);
+        if (saleDateError) return sendError(res, 400, saleDateError);
+
+        const sale = await createSale(req.body);
+        res.status(201);
+        sendData(res, sale);
+    })
+);
+
+router.put(
+    '/sales/:id',
+    asyncHandler(async (req, res) => {
+        const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
+        const missing = required.find(field => !req.body?.[field]);
+        if (missing) return sendError(res, 400, `Falta el campo ${missing}`);
+
+        const saleDateError = validateSaleDate(req.body.sold_at);
+        if (saleDateError) return sendError(res, 400, saleDateError);
+
+        const sale = await updateSale(req.params.id, req.body);
+        if (!sale) return sendError(res, 404, 'Venta no encontrada');
+
+        sendData(res, sale);
+    })
+);
+
+router.delete(
+    '/sales/:id',
+    asyncHandler(async (req, res) => {
+        await deactivateSale(req.params.id);
+        res.status(204).end();
+    })
+);
+
+router.get(
+    '/movements',
+    asyncHandler(async (req, res) => {
+        const { rows, meta } = await listMovements({
+            start: req.query.start,
+            end: req.query.end,
+            page: req.query.page,
+            pageSize: req.query.pageSize,
+            sort: req.query.sort || 'date-desc'
+        });
+
+        sendData(res, rows, meta);
+    })
+);
+
+router.get(
+    '/movements/:id',
+    asyncHandler(async (req, res) => {
+        const movement = await getMovementById(req.params.id);
+        if (!movement) return sendError(res, 404, 'Movimiento no encontrado');
+
+        sendData(res, movement);
+    })
+);
+
+router.post(
+    '/movements',
+    upload.single('attachment'),
+    asyncHandler(async (req, res) => {
+        const { date, type, amount, payment_type, category, description, account } =
+            req.body || {};
+
+        if (!date || !type || !amount || !payment_type || !category) {
+            return sendError(res, 400, 'Completa los campos obligatorios');
+        }
+
+        const movement = await createMovement({
+            date,
+            type,
+            amount: Number(amount),
+            payment_type,
+            category,
+            description,
+            account,
+            attachment: req.file ? req.file.filename : ''
+        });
+
+        res.status(201);
+        sendData(res, movement);
+    })
+);
+
+router.put(
+    '/movements/:id',
+    upload.single('attachment'),
+    asyncHandler(async (req, res) => {
+        const { date, type, amount, payment_type, category, description, account } =
+            req.body || {};
+
+        if (!date || !type || !amount || !payment_type || !category) {
+            return sendError(res, 400, 'Completa los campos obligatorios');
+        }
+
+        const movement = await updateMovement(req.params.id, {
+            date,
+            type,
+            amount: Number(amount),
+            payment_type,
+            category,
+            description,
+            account,
+            currentAttachment: req.body.currentAttachment,
+            attachment: req.file ? req.file.filename : ''
+        });
+
+        if (!movement) return sendError(res, 404, 'Movimiento no encontrado');
+        sendData(res, movement);
+    })
+);
+
+router.delete(
+    '/movements/:id',
+    asyncHandler(async (req, res) => {
+        await deleteMovement(req.params.id);
+        res.status(204).end();
+    })
+);
+
+module.exports = router;

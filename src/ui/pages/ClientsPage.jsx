@@ -1,0 +1,357 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
+import { Pencil, Plus, Search, UserRound } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import { applyVisibleLimit, compareText } from '../lib/collections';
+import CollectionToolbar from '../components/CollectionToolbar';
+import DataTable from '../components/DataTable';
+import DrawerForm from '../components/DrawerForm';
+import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
+
+const emptyClient = {
+    name: '',
+    phone: '',
+    address: '',
+    complemento: ''
+};
+
+function getInitials(name) {
+    return String(name || '')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(part => part[0]?.toUpperCase() || '')
+        .join('');
+}
+
+function getClientBadge(client) {
+    return client.avatar_emoji || getInitials(client.name);
+}
+
+function sortClients(rows, sortValue) {
+    const sorted = [...rows];
+
+    switch (sortValue) {
+        case 'name-desc':
+            return sorted.sort((left, right) => compareText(right.name, left.name));
+        case 'phone-asc':
+            return sorted.sort((left, right) => compareText(left.phone, right.phone));
+        case 'phone-desc':
+            return sorted.sort((left, right) => compareText(right.phone, left.phone));
+        case 'name-asc':
+        default:
+            return sorted.sort((left, right) => compareText(left.name, right.name));
+    }
+}
+
+export default function ClientsPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [draftSearch, setDraftSearch] = useState(searchParams.get('search') || '');
+    const [visibleLimit, setVisibleLimit] = useState('5');
+    const [sortValue, setSortValue] = useState('name-asc');
+    const [form, setForm] = useState(emptyClient);
+    const newMatch = useMatch('/clients/new');
+    const editMatch = useMatch('/clients/:hash/edit');
+    const navigate = useNavigate();
+    const location = useLocation();
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
+
+    const listQuery = useQuery({
+        queryKey: ['clients', location.search],
+        queryFn: () => apiFetch(`/api/clients${location.search}`)
+    });
+
+    const editQuery = useQuery({
+        queryKey: ['client', editMatch?.params.hash],
+        enabled: Boolean(editMatch?.params.hash),
+        queryFn: () => apiFetch(`/api/clients/${editMatch.params.hash}`)
+    });
+
+    useEffect(() => {
+        setDraftSearch(searchParams.get('search') || '');
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (newMatch) {
+            setForm(emptyClient);
+            return;
+        }
+
+        if (editQuery.data?.data) {
+            setForm({
+                name: editQuery.data.data.name,
+                phone: editQuery.data.data.phone,
+                address: editQuery.data.data.address,
+                complemento: editQuery.data.data.complemento || ''
+            });
+        }
+    }, [newMatch, editQuery.data]);
+
+    const sortedClients = useMemo(
+        () => sortClients(listQuery.data?.data || [], sortValue),
+        [listQuery.data?.data, sortValue]
+    );
+
+    const visibleClients = useMemo(
+        () => applyVisibleLimit(sortedClients, visibleLimit),
+        [sortedClients, visibleLimit]
+    );
+
+    const saveMutation = useMutation({
+        mutationFn: values =>
+            apiFetch(editMatch ? `/api/clients/${editMatch.params.hash}` : '/api/clients', {
+                method: editMatch ? 'PUT' : 'POST',
+                body: values
+            }),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['clients'] });
+            showToast(editMatch ? 'Cliente actualizado' : 'Cliente creado', 'success');
+            navigate(`/clients${location.search}`);
+        },
+        onError: error => {
+            showToast(error.message, 'danger');
+        }
+    });
+
+    const columns = [
+        {
+            key: 'name',
+            label: 'Nombre',
+            render: row => (
+                <div className="client-cell">
+                    <span className="client-cell__avatar">{getClientBadge(row)}</span>
+                    <div className="client-cell__copy">
+                        <button
+                            className="client-cell__name-button"
+                            onClick={() => navigate(`/clients/${row.hash}`)}
+                            type="button"
+                        >
+                            {row.name}
+                        </button>
+                        <span>{row.phone ? 'Contacto disponible' : 'Sin telefono registrado'}</span>
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'phone',
+            label: 'Telefono',
+            render: row => (
+                <span
+                    className={`client-cell__phone${
+                        row.phone ? '' : ' client-cell__phone--muted'
+                    }`}
+                >
+                    {row.phone || 'Sin telefono'}
+                </span>
+            )
+        },
+        {
+            key: 'address',
+            label: 'Direccion',
+            render: row => (
+                <span
+                    className={`client-cell__address${
+                        row.address ? '' : ' client-cell__address--muted'
+                    }`}
+                >
+                    {row.address || 'Sin direccion registrada'}
+                </span>
+            )
+        },
+        {
+            key: 'complemento',
+            label: 'Complemento',
+            render: row => (
+                <span
+                    className={`client-cell__address${
+                        row.complemento ? '' : ' client-cell__address--muted'
+                    }`}
+                >
+                    {row.complemento || 'Sin complemento'}
+                </span>
+            )
+        },
+        {
+            key: 'actions',
+            label: 'Acciones',
+            align: 'right',
+            render: row => (
+                <div className="table-action-group">
+                    <button
+                        className="table-action"
+                        onClick={() => navigate(`/clients/${row.hash}`)}
+                        type="button"
+                    >
+                        <UserRound size={14} />
+                        Perfil
+                    </button>
+                    <button
+                        className="table-action"
+                        onClick={() => navigate(`/clients/${row.hash}/edit${location.search}`)}
+                        type="button"
+                    >
+                        <Pencil size={14} />
+                        Editar
+                    </button>
+                </div>
+            )
+        }
+    ];
+
+    const submitSearch = event => {
+        event.preventDefault();
+        setSearchParams(draftSearch ? { search: draftSearch } : {});
+    };
+
+    const isDrawerOpen = Boolean(newMatch || editMatch);
+
+    return (
+        <div className="page-stack">
+            <section className="page-actions page-actions--clients">
+                <form className="search-bar" onSubmit={submitSearch}>
+                    <Search size={16} />
+                    <input
+                        placeholder="Buscar por nombre, telefono, direccion o complemento"
+                        value={draftSearch}
+                        onChange={event => setDraftSearch(event.target.value)}
+                    />
+                    <button className="button button--ghost" type="submit">
+                        Buscar
+                    </button>
+                </form>
+
+                <button
+                    className="button button--primary"
+                    onClick={() => navigate('/clients/new')}
+                    type="button"
+                >
+                    <Plus size={16} />
+                    Nuevo cliente
+                </button>
+            </section>
+
+            <CollectionToolbar
+                summary={`${visibleClients.length} de ${sortedClients.length} clientes visibles`}
+                helperText="Top y ordenamiento activo para todo el listado."
+                sortValue={sortValue}
+                onSortChange={setSortValue}
+                sortOptions={[
+                    { value: 'name-asc', label: 'Nombre A-Z' },
+                    { value: 'name-desc', label: 'Nombre Z-A' },
+                    { value: 'phone-asc', label: 'Telefono 0-9' },
+                    { value: 'phone-desc', label: 'Telefono 9-0' }
+                ]}
+                limitValue={visibleLimit}
+                onLimitChange={setVisibleLimit}
+            />
+
+            {listQuery.isLoading ? (
+                <section className="panel">
+                    <p>Cargando clientes...</p>
+                </section>
+            ) : listQuery.isError ? (
+                <section className="panel panel--error">
+                    <p>{listQuery.error.message}</p>
+                </section>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    rows={visibleClients}
+                    rowKey="id"
+                    className="data-table--clients"
+                    empty={
+                        <EmptyState
+                            title="No hay clientes registrados"
+                            description="Crea tu primer cliente para comenzar a operar en el nuevo panel."
+                            action={
+                                <button
+                                    className="button button--primary"
+                                    onClick={() => navigate('/clients/new')}
+                                    type="button"
+                                >
+                                    Crear cliente
+                                </button>
+                            }
+                        />
+                    }
+                />
+            )}
+
+            <DrawerForm
+                open={isDrawerOpen}
+                title={editMatch ? 'Editar cliente' : 'Nuevo cliente'}
+                description="Actualiza los datos sin salir del listado."
+                placement="centered"
+                onClose={() => navigate(`/clients${location.search}`)}
+            >
+                <form
+                    className="stack-form"
+                    onSubmit={event => {
+                        event.preventDefault();
+                        saveMutation.mutate(form);
+                    }}
+                >
+                    <label className="field">
+                        <span>Nombre</span>
+                        <input
+                            required
+                            value={form.name}
+                            onChange={event =>
+                                setForm(current => ({ ...current, name: event.target.value }))
+                            }
+                        />
+                    </label>
+
+                    <label className="field">
+                        <span>Telefono</span>
+                        <input
+                            value={form.phone}
+                            onChange={event =>
+                                setForm(current => ({ ...current, phone: event.target.value }))
+                            }
+                        />
+                    </label>
+
+                    <label className="field">
+                        <span>Direccion</span>
+                        <input
+                            value={form.address}
+                            onChange={event =>
+                                setForm(current => ({ ...current, address: event.target.value }))
+                            }
+                        />
+                    </label>
+
+                    <label className="field">
+                        <span>Complemento</span>
+                        <input
+                            value={form.complemento}
+                            onChange={event =>
+                                setForm(current => ({
+                                    ...current,
+                                    complemento: event.target.value
+                                }))
+                            }
+                        />
+                    </label>
+
+                    <button
+                        className="button button--primary"
+                        disabled={saveMutation.isPending}
+                        type="submit"
+                    >
+                        {saveMutation.isPending
+                            ? 'Guardando...'
+                            : editMatch
+                              ? 'Actualizar cliente'
+                              : 'Guardar cliente'}
+                    </button>
+                </form>
+            </DrawerForm>
+        </div>
+    );
+}
