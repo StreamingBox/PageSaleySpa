@@ -14,6 +14,55 @@ const PRODUCT_COLORS = [
     '#ff7b39'
 ];
 
+function parseFlexibleDateParts(value) {
+    if (!value) {
+        return null;
+    }
+
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return {
+            year: value.getFullYear(),
+            month: value.getMonth() + 1,
+            day: value.getDate()
+        };
+    }
+
+    const safeValue = String(value).trim();
+
+    if (!safeValue) {
+        return null;
+    }
+
+    const isoMatch = safeValue.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+        return {
+            year: Number(isoMatch[1]),
+            month: Number(isoMatch[2]),
+            day: Number(isoMatch[3])
+        };
+    }
+
+    const localeMatch = safeValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (localeMatch) {
+        return {
+            year: Number(localeMatch[3]),
+            month: Number(localeMatch[2]),
+            day: Number(localeMatch[1])
+        };
+    }
+
+    const parsed = new Date(safeValue);
+    if (Number.isNaN(parsed.getTime())) {
+        return null;
+    }
+
+    return {
+        year: parsed.getFullYear(),
+        month: parsed.getMonth() + 1,
+        day: parsed.getDate()
+    };
+}
+
 function normalizeYear(value) {
     const currentYear = new Date().getFullYear();
     const year = Number(value);
@@ -43,13 +92,10 @@ function monthTag(year, monthIndex) {
 }
 
 function parseSaleDate(value) {
-    const safeValue = String(value).slice(0, 10);
-    const [year, month, day] = safeValue.split('-').map(Number);
-
-    return {
-        year,
-        month,
-        day
+    return parseFlexibleDateParts(value) || {
+        year: 0,
+        month: 0,
+        day: 0
     };
 }
 
@@ -99,58 +145,52 @@ function getBucketBestWeek(bucket) {
     );
 }
 
-async function listAvailableYears() {
+async function listAnalyticsRows() {
     const [rows] = await pool.execute(
         `
             SELECT
-                MIN(YEAR(sold_at)) AS min_year,
-                MAX(YEAR(sold_at)) AS max_year
-              FROM sales
-             WHERE active = 1
+                s.id,
+                s.price,
+                s.quantity,
+                s.sold_at,
+                p.name AS product_name
+              FROM sales s
+              LEFT JOIN products p ON p.id = s.product_id
+             WHERE s.active = 1
+             ORDER BY s.sold_at ASC, s.id ASC
         `
     );
 
-    const minYear = Number(rows[0]?.min_year || new Date().getFullYear());
-    const maxYear = Number(rows[0]?.max_year || new Date().getFullYear());
-    const years = [];
+    return rows;
+}
 
-    for (let year = maxYear; year >= minYear; year -= 1) {
-        years.push(year);
-    }
+function listAvailableYears(rows) {
+    const years = [...new Set(rows.map(row => parseSaleDate(row.sold_at).year).filter(Boolean))]
+        .sort((left, right) => right - left);
 
     return years.length ? years : [new Date().getFullYear()];
 }
 
 async function getSalesAnalytics(inputYear = '') {
-    const availableYears = await listAvailableYears();
+    const rows = await listAnalyticsRows();
+    const availableYears = listAvailableYears(rows);
     const normalizedInputYear = normalizeYear(inputYear);
     const year =
         availableYears.includes(Number(inputYear)) || availableYears.includes(normalizedInputYear)
             ? Number(inputYear) || normalizedInputYear
             : availableYears[0];
 
-    const [rows] = await pool.execute(
-        `
-            SELECT
-                s.price,
-                s.quantity,
-                s.sold_at,
-                p.name AS product_name
-              FROM sales s
-              JOIN products p ON p.id = s.product_id
-             WHERE s.active = 1
-               AND YEAR(s.sold_at) = ?
-             ORDER BY s.sold_at ASC, s.id ASC
-        `,
-        [year]
-    );
-
     const buckets = Array.from({ length: 12 }, (_, monthIndex) =>
         createMonthBucket(year, monthIndex)
     );
 
     rows.forEach(row => {
-        const { month, day } = parseSaleDate(row.sold_at);
+        const { year: saleYear, month, day } = parseSaleDate(row.sold_at);
+
+        if (saleYear !== year) {
+            return;
+        }
+
         const monthIndex = month - 1;
         const bucket = buckets[monthIndex];
 
