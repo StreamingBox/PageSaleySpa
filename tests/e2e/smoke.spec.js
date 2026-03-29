@@ -40,6 +40,10 @@ test.describe('smoke autenticado', () => {
         await page.getByRole('link', { name: 'Ventas' }).click();
         await expect(page).toHaveURL(/\/sales$/);
 
+        await page.getByRole('link', { name: 'Conversaciones' }).click();
+        await expect(page).toHaveURL(/\/conversations$/);
+        await expect(page.getByRole('button', { name: 'Nueva conversacion' })).toBeVisible();
+
         await page.getByRole('link', { name: 'Facturas' }).click();
         await expect(page).toHaveURL(/\/invoices$/);
         await expect(page.getByRole('link', { name: 'Nueva factura' })).toBeVisible();

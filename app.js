@@ -10,6 +10,8 @@ const authRoutes = require('./routes/authRoutes');
 const exportRoutes = require('./routes/exportRoutes');
 
 const app = express();
+const DEFAULT_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+const sessionTtlMs = Number(process.env.SESSION_TTL_MS) || DEFAULT_SESSION_TTL_MS;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -24,7 +26,7 @@ app.use(
         saveUninitialized: false,
         rolling: true,
         cookie: {
-            maxAge: 5 * 60 * 1000,
+            maxAge: sessionTtlMs,
             httpOnly: true,
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production'

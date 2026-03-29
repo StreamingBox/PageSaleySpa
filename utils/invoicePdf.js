@@ -91,11 +91,17 @@ function drawStatusBadge(doc, status, x, y) {
 }
 
 function drawBrand(doc) {
-    // Logo en la cabecera
-    const logoWidth = 140;
+    const brandX = layout.left;
+    const brandY = 28;
+    const brandBoxWidth = 150;
+    const brandBoxHeight = 72;
     try {
         if (fs.existsSync(logoPngPath)) {
-            doc.image(logoPngPath, layout.left, 32, { width: logoWidth });
+            doc.image(logoPngPath, brandX, brandY, {
+                fit: [brandBoxWidth, brandBoxHeight],
+                align: 'left',
+                valign: 'center'
+            });
         }
     } catch (e) {
         console.error('Error cargando logo en PDF:', e);
@@ -105,18 +111,20 @@ function drawBrand(doc) {
         .fillColor(palette.inkSoft)
         .font('Helvetica')
         .fontSize(9)
-        .text('Factura interna de control comercial', layout.left, 100);
+        .text('Factura interna de control comercial', brandX, brandY + brandBoxHeight + 8, {
+            width: brandBoxWidth
+        });
 }
 
 function drawInvoiceMeta(doc, invoice) {
     doc.fillColor(palette.inkSoft).font('Helvetica-Bold').fontSize(10).text('FACTURA', layout.pageWidth - layout.right - 140, 50, { width: 140, align: 'right' });
     doc.fillColor(palette.ink).font('Helvetica-Bold').fontSize(28).text(invoice.invoice_number, layout.pageWidth - layout.right - 180, 64, { width: 180, align: 'right' });
     drawStatusBadge(doc, invoice.status, layout.pageWidth - layout.right - 102, 96);
-    doc.moveTo(layout.left, 128).lineTo(layout.pageWidth - layout.right, 128).strokeColor(palette.border).lineWidth(1).stroke();
+    doc.moveTo(layout.left, 136).lineTo(layout.pageWidth - layout.right, 136).strokeColor(palette.border).lineWidth(1).stroke();
 }
 
 function drawInfoCards(doc, invoice) {
-    const y = 150;
+    const y = 158;
     const gap = 16;
     const cardWidth = (contentWidth - gap) / 2;
     const cardHeight = 124;
@@ -145,7 +153,7 @@ function drawPageHeader(doc, invoice, includeCards = true) {
     drawInvoiceMeta(doc, invoice);
     if (includeCards) return drawInfoCards(doc, invoice);
     doc.fillColor(palette.inkSoft).font('Helvetica').fontSize(11).text(`${invoice.invoice_number} · ${invoice.client_name}`, layout.left, 145, { width: contentWidth });
-    return 172;
+    return 178;
 }
 
 function getTableColumns() {

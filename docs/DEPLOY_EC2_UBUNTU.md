@@ -91,6 +91,7 @@ DB_USER=root
 DB_PASSWORD=tu_password
 DB_NAME=my_database
 SESSION_SECRET=un_valor_largo_y_seguro
+SESSION_TTL_MS=7200000
 HASH_SECRET=otro_valor_largo_y_seguro
 
 APPOINTMENTS_BUSINESS_NAME=SaleySpa

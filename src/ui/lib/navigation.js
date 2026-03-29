@@ -5,6 +5,7 @@ import {
     CircleDollarSign,
     FileText,
     LayoutDashboard,
+    MessageSquare,
     Package2,
     ReceiptText,
     UserRound,
@@ -50,6 +51,11 @@ const adminNavigationItems = [
         to: '/sales',
         label: 'Ventas',
         icon: CircleDollarSign
+    },
+    {
+        to: '/conversations',
+        label: 'Conversaciones',
+        icon: MessageSquare
     },
     {
         to: '/analytics',
@@ -160,6 +166,11 @@ const adminRouteMeta = [
         exact: true,
         title: 'Ventas',
         description: 'Filtros persistentes, exportacion y control de estado de pago.'
+    },
+    {
+        pattern: '/conversations/*',
+        title: 'Conversaciones',
+        description: 'Agente administrador para priorizar, resumir y dar seguimiento a otros chats.'
     },
     {
         pattern: '/analytics',
