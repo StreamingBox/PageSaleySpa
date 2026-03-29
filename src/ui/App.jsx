@@ -13,7 +13,6 @@ import InvoiceFormPage from './pages/InvoiceFormPage';
 import InvoiceDetailPage from './pages/InvoiceDetailPage';
 import SalesListPage from './pages/SalesListPage';
 import SalesFormPage from './pages/SalesFormPage';
-import ConversationsAdminPage from './pages/ConversationsAdminPage';
 import MovementsPage from './pages/MovementsPage';
 import MovementsFormPage from './pages/MovementsFormPage';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -58,9 +57,6 @@ function RoutedApp() {
                 {isAdmin ? <Route path="/sales" element={<SalesListPage />} /> : null}
                 {isAdmin ? <Route path="/sales/new" element={<SalesFormPage />} /> : null}
                 {isAdmin ? <Route path="/sales/:id/edit" element={<SalesFormPage />} /> : null}
-                {isAdmin ? <Route path="/conversations" element={<ConversationsAdminPage />} /> : null}
-                {isAdmin ? <Route path="/conversations/new" element={<ConversationsAdminPage />} /> : null}
-                {isAdmin ? <Route path="/conversations/:id/edit" element={<ConversationsAdminPage />} /> : null}
                 {isAdmin ? <Route path="/analytics" element={<AnalyticsPage />} /> : null}
                 {isAdmin ? <Route path="/movements" element={<MovementsPage />} /> : null}
                 {isAdmin ? <Route path="/movements/new" element={<MovementsFormPage />} /> : null}

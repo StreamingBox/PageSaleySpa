@@ -32,14 +32,6 @@ const {
     updateCategory
 } = require('../../services/categoriesService');
 const {
-    createConversationThread,
-    deleteConversationThread,
-    getConversationThreadById,
-    getConversationThreadsSummary,
-    listConversationThreads,
-    updateConversationThread
-} = require('../../services/conversationThreadsService');
-const {
     getClientById,
     createClient,
     getClientByHash,
@@ -179,78 +171,6 @@ router.get(
     asyncHandler(async (req, res) => {
         const data = await getSalesAnalytics(req.query.year || '');
         sendData(res, data);
-    })
-);
-
-router.get(
-    '/conversation-threads/summary',
-    requireApiRoles('admin'),
-    asyncHandler(async (_req, res) => {
-        const data = await getConversationThreadsSummary();
-        sendData(res, data);
-    })
-);
-
-router.get(
-    '/conversation-threads',
-    requireApiRoles('admin'),
-    asyncHandler(async (req, res) => {
-        const data = await listConversationThreads({
-            search: req.query.search || '',
-            status: req.query.status || '',
-            priority: req.query.priority || '',
-            channel: req.query.channel || ''
-        });
-        sendData(res, data);
-    })
-);
-
-router.get(
-    '/conversation-threads/:id',
-    requireApiRoles('admin'),
-    asyncHandler(async (req, res) => {
-        const thread = await getConversationThreadById(req.params.id);
-        if (!thread) return sendError(res, 404, 'Conversacion no encontrada');
-
-        sendData(res, thread);
-    })
-);
-
-router.post(
-    '/conversation-threads',
-    requireApiRoles('admin'),
-    asyncHandler(async (req, res) => {
-        if (!String(req.body?.title || '').trim()) {
-            return sendError(res, 400, 'El titulo de la conversacion es obligatorio');
-        }
-
-        const thread = await createConversationThread(req.body || {});
-        res.status(201);
-        sendData(res, thread);
-    })
-);
-
-router.put(
-    '/conversation-threads/:id',
-    requireApiRoles('admin'),
-    asyncHandler(async (req, res) => {
-        if (!String(req.body?.title || '').trim()) {
-            return sendError(res, 400, 'El titulo de la conversacion es obligatorio');
-        }
-
-        const thread = await updateConversationThread(req.params.id, req.body || {});
-        if (!thread) return sendError(res, 404, 'Conversacion no encontrada');
-
-        sendData(res, thread);
-    })
-);
-
-router.delete(
-    '/conversation-threads/:id',
-    requireApiRoles('admin'),
-    asyncHandler(async (req, res) => {
-        await deleteConversationThread(req.params.id);
-        res.status(204).end();
     })
 );
 
