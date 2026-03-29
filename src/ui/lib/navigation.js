@@ -1,4 +1,5 @@
 import {
+    ChartColumnBig,
     CalendarDays,
     Boxes,
     CircleDollarSign,
@@ -49,6 +50,11 @@ const adminNavigationItems = [
         to: '/sales',
         label: 'Ventas',
         icon: CircleDollarSign
+    },
+    {
+        to: '/analytics',
+        label: 'Estadisticas',
+        icon: ChartColumnBig
     },
     {
         to: '/movements',
@@ -154,6 +160,12 @@ const adminRouteMeta = [
         exact: true,
         title: 'Ventas',
         description: 'Filtros persistentes, exportacion y control de estado de pago.'
+    },
+    {
+        pattern: '/analytics',
+        exact: true,
+        title: 'Estadisticas',
+        description: 'Analitica visual de ventas, comparativas y top servicios.'
     },
     {
         pattern: '/movements',

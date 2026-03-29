@@ -15,6 +15,7 @@ import SalesListPage from './pages/SalesListPage';
 import SalesFormPage from './pages/SalesFormPage';
 import MovementsPage from './pages/MovementsPage';
 import MovementsFormPage from './pages/MovementsFormPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { getRouteMeta, getSessionUser } from './lib/navigation';
 
@@ -56,6 +57,7 @@ function RoutedApp() {
                 {isAdmin ? <Route path="/sales" element={<SalesListPage />} /> : null}
                 {isAdmin ? <Route path="/sales/new" element={<SalesFormPage />} /> : null}
                 {isAdmin ? <Route path="/sales/:id/edit" element={<SalesFormPage />} /> : null}
+                {isAdmin ? <Route path="/analytics" element={<AnalyticsPage />} /> : null}
                 {isAdmin ? <Route path="/movements" element={<MovementsPage />} /> : null}
                 {isAdmin ? <Route path="/movements/new" element={<MovementsFormPage />} /> : null}
                 {isAdmin ? <Route path="/movements/:id/edit" element={<MovementsFormPage />} /> : null}

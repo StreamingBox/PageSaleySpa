@@ -23,6 +23,7 @@ const {
     updateAppointment,
     updateAppointmentSettings
 } = require('../../services/appointmentsService');
+const { getSalesAnalytics } = require('../../services/analyticsService');
 const {
     createCategory,
     deleteCategory,
@@ -160,6 +161,15 @@ router.get(
             paid: req.query.paid || ''
         });
 
+        sendData(res, data);
+    })
+);
+
+router.get(
+    '/analytics/sales',
+    requireApiRoles('admin'),
+    asyncHandler(async (req, res) => {
+        const data = await getSalesAnalytics(req.query.year || '');
         sendData(res, data);
     })
 );

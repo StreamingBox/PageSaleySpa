@@ -39,6 +39,7 @@ router.get('/', isAuth, (req, res, next) => {
     '/sales',
     '/sales/new',
     '/sales/:id/edit',
+    '/analytics',
     '/movements',
     '/movements/new',
     '/movements/:id/edit',
