@@ -69,6 +69,7 @@ const {
     getInvoiceById,
     listInvoiceCandidates,
     listInvoices,
+    mergeInvoices,
     markInvoicePaid
 } = require('../../services/invoicesService');
 
@@ -664,6 +665,15 @@ router.post(
     asyncHandler(async (req, res) => {
         const invoice = await createInvoice(req.body || {});
         res.status(201);
+        sendData(res, invoice);
+    })
+);
+
+router.post(
+    '/invoices/merge',
+    requireApiRoles('admin'),
+    asyncHandler(async (req, res) => {
+        const invoice = await mergeInvoices(req.body || {});
         sendData(res, invoice);
     })
 );

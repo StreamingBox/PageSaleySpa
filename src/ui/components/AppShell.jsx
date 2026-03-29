@@ -32,6 +32,27 @@ export default function AppShell({ children, meta }) {
     }, [mobileOpen]);
 
     useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+
+        const mediaQuery = window.matchMedia('(min-width: 1081px)');
+        const syncMenuState = event => {
+            if (event.matches) {
+                setMobileOpen(false);
+            }
+        };
+
+        syncMenuState(mediaQuery);
+
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', syncMenuState);
+            return () => mediaQuery.removeEventListener('change', syncMenuState);
+        }
+
+        mediaQuery.addListener(syncMenuState);
+        return () => mediaQuery.removeListener(syncMenuState);
+    }, []);
+
+    useEffect(() => {
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;
 
@@ -50,6 +71,7 @@ export default function AppShell({ children, meta }) {
             <div className="app-shell__main">
                 <TopBar
                     meta={meta}
+                    mobileOpen={mobileOpen}
                     onOpenMenu={() => setMobileOpen(true)}
                     theme={theme}
                     onToggleTheme={() =>

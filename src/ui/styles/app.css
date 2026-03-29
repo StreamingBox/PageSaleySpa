@@ -191,14 +191,13 @@ textarea {
 }
 
 .sidebar__brand-logo {
-    width: 100%;
-    max-width: 220px;
-    height: auto;
-    /* La imagen tiene mucho margen transparente, forzamos un zoom masivo de 1.5x, para que se vea perfectamente grande. */
-    transform: scale(1.5);
-    transform-origin: center;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    width: 160px;
+    max-width: 100%;
+    height: 52px;
+    object-fit: contain;
+    object-position: left center;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(167, 119, 207, 0.14));
 }
 
 .topbar__logo {
@@ -292,6 +291,10 @@ html[data-theme='dark'] .sidebar__link--active {
     border: 0;
 }
 
+.sidebar__backdrop {
+    z-index: 29;
+}
+
 .topbar {
     display: flex;
     gap: 20px;
@@ -314,6 +317,16 @@ html[data-theme='dark'] .sidebar__link--active {
 
 .topbar__menu {
     display: none;
+}
+
+.topbar__copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.topbar__copy h2,
+.topbar__copy span {
+    overflow-wrap: anywhere;
 }
 
 .icon-button {
@@ -1083,11 +1096,11 @@ html[data-theme='dark'] .kpi-card__note--danger {
 .data-table table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 760px;
+    min-width: 680px;
 }
 
 .data-table--clients table {
-    min-width: 1180px;
+    min-width: 980px;
 }
 
 .data-table th,
@@ -1760,15 +1773,25 @@ html[data-theme='dark'] .data-table--clients tbody tr:hover {
     }
 
     .sidebar {
-        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(320px, calc(100vw - 32px));
+        height: 100dvh;
+        border-right: 1px solid var(--border);
+        box-shadow: 0 24px 46px rgba(58, 43, 86, 0.22);
+        transform: translateX(-100%);
+        transition: transform var(--transition);
+        z-index: 30;
     }
 
     .sidebar--open {
-        display: none;
+        transform: translateX(0);
     }
 
     .topbar__menu {
-        display: none;
+        display: grid;
     }
 
     .editor-grid,
@@ -1783,6 +1806,22 @@ html[data-theme='dark'] .data-table--clients tbody tr:hover {
         flex-direction: column;
         align-items: stretch;
     }
+
+    .topbar {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .topbar__copy {
+        grid-column: 1 / -1;
+    }
+
+    .topbar__user {
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
 }
 
 @media (max-width: 720px) {
@@ -1791,7 +1830,13 @@ html[data-theme='dark'] .data-table--clients tbody tr:hover {
     }
 
     .data-table table {
-        min-width: 640px;
+        min-width: 560px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 14px 12px;
+        font-size: 14px;
     }
 
     .search-bar,
@@ -2649,16 +2694,6 @@ html[data-theme='dark'] .metrics-month-selector__button--active {
 }
 
 /* Brand logo mejorado en sidebar */
-.sidebar__brand-logo {
-    width: 160px;
-    max-width: 100%;
-    height: 52px;
-    object-fit: contain;
-    object-position: left center;
-    display: block;
-    filter: drop-shadow(0 2px 6px rgba(167, 119, 207, 0.14));
-}
-
 html[data-theme='dark'] .sidebar__brand-logo {
     filter: drop-shadow(0 2px 8px rgba(189, 143, 227, 0.20)) brightness(1.08);
 }
@@ -2693,13 +2728,13 @@ html[data-theme='dark'] .sidebar__brand-logo {
     }
 
     .topbar__logo {
-        width: min(260px, 78vw);
-        height: 72px;
+        width: min(180px, 52vw);
+        height: 52px;
         align-self: center;
-        transform: scale(1.75);
+        transform: scale(1.18);
         transform-origin: center;
-        margin-top: 6px;
-        margin-bottom: 6px;
+        margin-top: 0;
+        margin-bottom: 0;
     }
 
     .topbar__mobile-logo {
@@ -3011,7 +3046,7 @@ html[data-theme='dark'] .kpi-card:hover {
         padding: 6px 1px;
         border-radius: 12px;
         color: var(--muted);
-        font-size: 8.5px;
+        font-size: 10px;
         line-height: 1.1;
         font-weight: 700;
         text-align: center;

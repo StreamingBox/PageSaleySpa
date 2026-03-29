@@ -82,7 +82,11 @@ const userNavigationItems = [
 ];
 
 export const navigationItems = isAdminUser() ? adminNavigationItems : userNavigationItems;
-export const mobileNavigationItems = navigationItems;
+export const mobileNavigationItems = isAdminUser()
+    ? adminNavigationItems.filter(item =>
+          ['/', '/appointments', '/sales', '/clients'].includes(item.to)
+      )
+    : userNavigationItems;
 
 const adminRouteMeta = [
     {

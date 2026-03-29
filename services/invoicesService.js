@@ -70,6 +70,22 @@ function normalizeSaleIds(saleIds) {
     return normalized;
 }
 
+function normalizeInvoiceIds(invoiceIds) {
+    if (!Array.isArray(invoiceIds) || invoiceIds.length < 2) {
+        throw createAppError(400, 'Debes seleccionar al menos dos facturas para unificarlas');
+    }
+
+    const normalized = [
+        ...new Set(invoiceIds.map(value => Number(value)).filter(Number.isInteger))
+    ].filter(value => value > 0);
+
+    if (normalized.length < 2) {
+        throw createAppError(400, 'Debes seleccionar al menos dos facturas válidas');
+    }
+
+    return normalized;
+}
+
 function compareRowsBySoldAtAsc(left, right) {
     const leftTime = new Date(left.sold_at).getTime();
     const rightTime = new Date(right.sold_at).getTime();
@@ -462,6 +478,138 @@ async function markInvoicePaid(id, { payment_source, paid_at }) {
     }
 }
 
+async function mergeInvoices({ invoice_ids }) {
+    await ensureInvoiceSchema();
+
+    const invoiceIds = normalizeInvoiceIds(invoice_ids);
+    const placeholders = invoiceIds.map(() => '?').join(', ');
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [invoiceRows] = await connection.execute(
+            `SELECT
+                i.*,
+                (
+                    SELECT COUNT(*)
+                    FROM invoice_items ii
+                    WHERE ii.invoice_id = i.id
+                ) AS lines_count
+             FROM invoices i
+             WHERE i.id IN (${placeholders})
+             FOR UPDATE`,
+            invoiceIds
+        );
+
+        if (invoiceRows.length !== invoiceIds.length) {
+            throw createAppError(404, 'Una o más facturas ya no existen');
+        }
+
+        const invoices = invoiceRows.map(mapInvoiceRow).sort((left, right) => {
+            const leftSequence = Number(left.sequence_number || left.id || 0);
+            const rightSequence = Number(right.sequence_number || right.id || 0);
+
+            if (leftSequence !== rightSequence) {
+                return leftSequence - rightSequence;
+            }
+
+            return left.id - right.id;
+        });
+
+        const primaryInvoice = invoices[0];
+        const primaryPublicId = primaryInvoice.public_id;
+        const clientId = primaryInvoice.client_id;
+
+        invoices.forEach(invoice => {
+            if (invoice.client_id !== clientId) {
+                throw createAppError(409, 'Solo puedes unificar facturas del mismo cliente');
+            }
+
+            if (invoice.status !== 'PENDIENTE') {
+                throw createAppError(
+                    409,
+                    'Solo puedes unificar facturas pendientes. Las pagadas deben conservarse por separado'
+                );
+            }
+        });
+
+        const [itemRows] = await connection.execute(
+            `SELECT *
+             FROM invoice_items
+             WHERE invoice_id IN (${placeholders})
+             ORDER BY sold_at ASC, line_order ASC, id ASC
+             FOR UPDATE`,
+            invoiceIds
+        );
+
+        const orderedItems = itemRows
+            .map(mapInvoiceItemRow)
+            .sort((left, right) => {
+                const soldAtDiff =
+                    new Date(left.sold_at).getTime() - new Date(right.sold_at).getTime();
+
+                if (soldAtDiff !== 0) {
+                    return soldAtDiff;
+                }
+
+                if (left.invoice_id !== right.invoice_id) {
+                    return left.invoice_id - right.invoice_id;
+                }
+
+                if (left.line_order !== right.line_order) {
+                    return left.line_order - right.line_order;
+                }
+
+                return left.id - right.id;
+            });
+
+        for (const [index, item] of orderedItems.entries()) {
+            await connection.execute(
+                `UPDATE invoice_items
+                 SET invoice_id = ?,
+                     line_order = ?
+                 WHERE id = ?`,
+                [primaryInvoice.id, index + 1, item.id]
+            );
+        }
+
+        const mergedTotal = orderedItems.reduce(
+            (total, item) => total + Number(item.line_total || 0),
+            0
+        );
+
+        await connection.execute(
+            `UPDATE invoices
+             SET subtotal = ?,
+                 total = ?,
+                 status = 'PENDIENTE',
+                 payment_source = 'PENDIENTE',
+                 paid_at = NULL
+             WHERE id = ?`,
+            [mergedTotal, mergedTotal, primaryInvoice.id]
+        );
+
+        const redundantInvoices = invoices.slice(1);
+
+        if (redundantInvoices.length) {
+            await connection.execute(
+                `DELETE FROM invoices
+                 WHERE id IN (${redundantInvoices.map(() => '?').join(', ')})`,
+                redundantInvoices.map(invoice => invoice.id)
+            );
+        }
+
+        await connection.commit();
+        return getInvoiceById(primaryPublicId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
 async function getInvoiceForSaleId(saleId, executor = pool) {
     await ensureInvoiceSchema();
 
@@ -511,5 +659,6 @@ module.exports = {
     getInvoiceForSaleId,
     listInvoiceCandidates,
     listInvoices,
+    mergeInvoices,
     markInvoicePaid
 };

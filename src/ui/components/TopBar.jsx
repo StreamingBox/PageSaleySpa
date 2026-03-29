@@ -1,6 +1,6 @@
 import { Menu, MoonStar, SunMedium } from 'lucide-react';
 
-export default function TopBar({ meta, onOpenMenu, theme, onToggleTheme }) {
+export default function TopBar({ meta, mobileOpen, onOpenMenu, theme, onToggleTheme }) {
     const initialState = window.__APP_STATE__ || {};
     const user = initialState.user || {};
     const isDark = theme === 'dark';
@@ -12,13 +12,14 @@ export default function TopBar({ meta, onOpenMenu, theme, onToggleTheme }) {
                 className="topbar__menu"
                 onClick={onOpenMenu}
                 type="button"
+                aria-expanded={mobileOpen}
                 aria-label="Abrir navegación"
             >
                 <Menu size={18} />
             </button>
 
             <img
-                className="topbar__logo"
+                className="topbar__logo topbar__mobile-logo"
                 src="/brand/logo.png"
                 alt="SaleySpa"
             />

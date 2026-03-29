@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Plus, Search } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
@@ -12,10 +12,12 @@ import {
     normalizeInvoiceFilters
 } from '../lib/format';
 import CollectionToolbar from '../components/CollectionToolbar';
+import ConfirmDialog from '../components/ConfirmDialog';
 import DataTable from '../components/DataTable';
 import EmptyState from '../components/EmptyState';
 import FilterBar from '../components/FilterBar';
 import SearchableSelect from '../components/SearchableSelect';
+import { useToast } from '../components/Toast';
 
 const statusOptions = [
     {
@@ -69,9 +71,13 @@ export default function InvoicesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const location = useLocation();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const [draft, setDraft] = useState(normalizeInvoiceFilters({}));
     const [visibleLimit, setVisibleLimit] = useState('5');
     const [sortValue, setSortValue] = useState('date-desc');
+    const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
+    const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
 
     const invoicesQuery = useQuery({
         queryKey: ['invoices', location.search],
@@ -115,6 +121,64 @@ export default function InvoicesPage() {
         [sortedInvoices, visibleLimit]
     );
 
+    const mergeableVisibleInvoices = useMemo(
+        () => visibleInvoices.filter(invoice => invoice.status === 'PENDIENTE'),
+        [visibleInvoices]
+    );
+
+    const selectedInvoices = useMemo(
+        () =>
+            sortedInvoices
+                .filter(invoice => selectedInvoiceIds.includes(invoice.id))
+                .sort((left, right) => left.sequence_number - right.sequence_number),
+        [selectedInvoiceIds, sortedInvoices]
+    );
+
+    const primaryInvoice = selectedInvoices[0] || null;
+    const selectedClientIds = [...new Set(selectedInvoices.map(invoice => invoice.client_id))];
+    const canMergeSelection =
+        selectedInvoices.length >= 2 && selectedClientIds.length === 1;
+    const allVisibleSelected =
+        mergeableVisibleInvoices.length > 0 &&
+        mergeableVisibleInvoices.every(invoice => selectedInvoiceIds.includes(invoice.id));
+
+    useEffect(() => {
+        const validIds = new Set(
+            sortedInvoices
+                .filter(invoice => invoice.status === 'PENDIENTE')
+                .map(invoice => invoice.id)
+        );
+
+        setSelectedInvoiceIds(current => current.filter(id => validIds.has(id)));
+    }, [sortedInvoices]);
+
+    const mergeMutation = useMutation({
+        mutationFn: invoiceIds =>
+            apiFetch('/api/invoices/merge', {
+                method: 'POST',
+                body: { invoice_ids: invoiceIds }
+            }),
+        onSuccess: async payload => {
+            const mergedInvoice = payload.data;
+
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+                queryClient.invalidateQueries({ queryKey: ['invoice'] }),
+                queryClient.invalidateQueries({ queryKey: ['sales'] }),
+                queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            ]);
+
+            setSelectedInvoiceIds([]);
+            setMergeDialogOpen(false);
+            showToast(
+                `Factura ${mergedInvoice.invoice_number} actualizada con las líneas unificadas`,
+                'success'
+            );
+            navigate(`/invoices/${mergedInvoice.public_id}`);
+        },
+        onError: error => showToast(error.message, 'danger')
+    });
+
     const submitFilters = event => {
         event.preventDefault();
         setSearchParams(
@@ -124,7 +188,52 @@ export default function InvoicesPage() {
         );
     };
 
+    const toggleInvoiceSelection = invoiceId => {
+        setSelectedInvoiceIds(current =>
+            current.includes(invoiceId)
+                ? current.filter(id => id !== invoiceId)
+                : [...current, invoiceId]
+        );
+    };
+
+    const toggleVisibleSelection = () => {
+        if (!mergeableVisibleInvoices.length) {
+            return;
+        }
+
+        setSelectedInvoiceIds(current => {
+            const visibleIds = mergeableVisibleInvoices.map(invoice => invoice.id);
+            const everythingSelected = visibleIds.every(id => current.includes(id));
+
+            if (everythingSelected) {
+                return current.filter(id => !visibleIds.includes(id));
+            }
+
+            return [...new Set([...current, ...visibleIds])];
+        });
+    };
+
     const columns = [
+        {
+            key: 'select',
+            label: (
+                <input
+                    aria-label="Seleccionar facturas visibles"
+                    checked={allVisibleSelected}
+                    onChange={toggleVisibleSelection}
+                    type="checkbox"
+                />
+            ),
+            render: row => (
+                <input
+                    aria-label={`Seleccionar ${row.invoice_number}`}
+                    checked={selectedInvoiceIds.includes(row.id)}
+                    disabled={row.status !== 'PENDIENTE'}
+                    onChange={() => toggleInvoiceSelection(row.id)}
+                    type="checkbox"
+                />
+            )
+        },
         { key: 'invoice_number', label: 'Factura' },
         { key: 'issue_date', label: 'Emisión', render: row => formatDate(row.issue_date) },
         { key: 'client_name', label: 'Cliente' },
@@ -286,6 +395,37 @@ export default function InvoicesPage() {
                 onLimitChange={setVisibleLimit}
             />
 
+            {selectedInvoices.length ? (
+                <section className="range-banner">
+                    <div>
+                        <strong>{selectedInvoices.length} facturas seleccionadas</strong>
+                        <p className="summary-note">
+                            {selectedClientIds.length > 1
+                                ? 'La selección actual mezcla clientes distintos. Elige solo facturas del mismo cliente.'
+                                : `Se conservará ${primaryInvoice?.invoice_number} y se moverán allí las líneas de las demás facturas pendientes seleccionadas.`}
+                        </p>
+                    </div>
+
+                    <div className="hero__actions">
+                        <button
+                            className="button button--ghost"
+                            onClick={() => setSelectedInvoiceIds([])}
+                            type="button"
+                        >
+                            Limpiar selección
+                        </button>
+                        <button
+                            className="button button--primary"
+                            disabled={!canMergeSelection}
+                            onClick={() => setMergeDialogOpen(true)}
+                            type="button"
+                        >
+                            Unificar facturas
+                        </button>
+                    </div>
+                </section>
+            ) : null}
+
             {invoicesQuery.isLoading ? (
                 <section className="panel">
                     <p>Cargando facturas...</p>
@@ -312,6 +452,25 @@ export default function InvoicesPage() {
                     }
                 />
             )}
+
+            <ConfirmDialog
+                open={mergeDialogOpen}
+                title="Unificar facturas seleccionadas"
+                description={
+                    selectedInvoices.length < 2
+                        ? 'Selecciona al menos dos facturas pendientes del mismo cliente.'
+                        : selectedClientIds.length > 1
+                            ? 'No puedes unificar facturas de clientes distintos.'
+                        : `Se conservará ${primaryInvoice?.invoice_number} y se eliminarán ${selectedInvoices
+                              .slice(1)
+                              .map(invoice => invoice.invoice_number)
+                              .join(', ')} después de mover sus líneas a la factura principal.`
+                }
+                confirmLabel={mergeMutation.isPending ? 'Unificando...' : 'Sí, unificar'}
+                onCancel={() => setMergeDialogOpen(false)}
+                onConfirm={() => mergeMutation.mutate(selectedInvoiceIds)}
+                tone="primary"
+            />
         </div>
     );
 }
