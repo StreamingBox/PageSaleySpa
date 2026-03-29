@@ -14,6 +14,24 @@ import { formatMoney } from '../lib/format';
 import EmptyState from '../components/EmptyState';
 
 const MONTH_COMPARE_LIMIT = 6;
+const MONTH_SERIES_COLORS = [
+    '#a777cf',
+    '#79cfcd',
+    '#7db68d',
+    '#d7a56f',
+    '#d84f5f',
+    '#c58fcf',
+    '#8d84a0',
+    '#90c9c8',
+    '#cdb3de',
+    '#e4b98f',
+    '#9eb7df',
+    '#c6a46d'
+];
+
+function getMonthAccent(month) {
+    return MONTH_SERIES_COLORS[month?.monthIndex % MONTH_SERIES_COLORS.length] || '#a777cf';
+}
 
 function pickDefaultMonths(months) {
     const activeMonths = months.filter(month => month.revenue > 0);
@@ -34,7 +52,7 @@ function buildComparisonData(months, selectedKeys, granularity) {
     const series = selectedMonths.map(month => ({
         key: month.key,
         label: month.label,
-        color: month.breakdown[0]?.color || '#22b8ff',
+        color: getMonthAccent(month),
         values: labels.map((_, index) => month.series[granularity][index]?.revenue || 0)
     }));
 
@@ -188,7 +206,13 @@ function ComparisonChart({ labels, series, granularity, chartStyle }) {
 
             <div className="chart-legend">
                 {series.map(item => (
-                    <span className="chart-legend__item analytics-legend-item" key={item.key}>
+                    <span
+                        className="chart-legend__item analytics-legend-item"
+                        key={item.key}
+                        style={{
+                            '--legend-accent': item.color
+                        }}
+                    >
                         <span
                             className="chart-legend__swatch"
                             style={{ background: item.color }}
@@ -442,7 +466,7 @@ export default function AnalyticsPage() {
                     <div className="analytics-chip-list">
                         {payload.active_months.map(month => {
                             const active = selectedMonths.includes(month.key);
-                            const color = month.breakdown[0]?.color || '#22b8ff';
+                            const color = getMonthAccent(month);
 
                             return (
                                 <button
@@ -468,7 +492,7 @@ export default function AnalyticsPage() {
                             className="analytics-month-card"
                             key={month.key}
                             style={{
-                                '--card-accent': month.breakdown[0]?.color || '#22b8ff'
+                                '--card-accent': getMonthAccent(month)
                             }}
                         >
                             <p>{month.tag}</p>
@@ -496,7 +520,13 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="chart-legend">
                             {comparison.series.map(item => (
-                                <span className="chart-legend__item analytics-legend-item" key={item.key}>
+                                <span
+                                    className="chart-legend__item analytics-legend-item"
+                                    key={item.key}
+                                    style={{
+                                        '--legend-accent': item.color
+                                    }}
+                                >
                                     <span
                                         className="chart-legend__swatch"
                                         style={{ background: item.color }}
