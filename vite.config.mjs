@@ -9,15 +9,18 @@ export default defineConfig({
     build: {
         outDir: path.resolve(__dirname, 'public/app'),
         emptyOutDir: true,
-        cssCodeSplit: false,
+        cssCodeSplit: true,
         rollupOptions: {
-            input: path.resolve(__dirname, 'src/ui/main.jsx'),
+            input: {
+                app: path.resolve(__dirname, 'src/ui/main.jsx'),
+                login: path.resolve(__dirname, 'src/auth-login/main.jsx')
+            },
             output: {
-                entryFileNames: 'app.js',
+                entryFileNames: '[name].js',
                 chunkFileNames: 'chunks/[name].js',
                 assetFileNames: assetInfo => {
                     if (assetInfo.name && assetInfo.name.endsWith('.css')) {
-                        return 'app.css';
+                        return '[name][extname]';
                     }
 
                     return 'assets/[name][extname]';

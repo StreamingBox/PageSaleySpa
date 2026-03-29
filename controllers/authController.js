@@ -126,7 +126,7 @@ exports.login = async (req, res) => {
 
     if (!email || !password) {
         return renderLogin(res, {
-            error: 'Ingrese correo y contrasena.',
+            error: 'Ingrese correo y contraseña.',
             email,
             rememberSession
         });
@@ -136,7 +136,7 @@ exports.login = async (req, res) => {
         const user = await findUserByEmail(email);
         if (!user || !(await verifyPassword(password, user.password))) {
             return renderLogin(res, {
-                error: 'Credenciales invalidas.',
+                error: 'Credenciales inválidas.',
                 email,
                 rememberSession
             });
@@ -155,7 +155,7 @@ exports.login = async (req, res) => {
     } catch (err) {
         console.error(err);
         renderLogin(res, {
-            error: 'Error al iniciar sesion.',
+            error: 'Error al iniciar sesión.',
             email,
             rememberSession
         });
