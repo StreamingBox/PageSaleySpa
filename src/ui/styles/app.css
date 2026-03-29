@@ -163,6 +163,62 @@ textarea {
     margin: 0 auto;
 }
 
+.app-install-banner {
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(167, 119, 207, 0.12), rgba(121, 207, 205, 0.1)),
+        var(--bg-elevated);
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+}
+
+.app-install-banner__icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--indigo), var(--cyan));
+    color: white;
+    box-shadow: 0 14px 24px rgba(112, 97, 141, 0.18);
+}
+
+.app-install-banner__copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.app-install-banner__eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-install-banner__copy strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.app-install-banner__copy span {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.app-install-banner__action {
+    white-space: nowrap;
+}
+
 .mobile-bottom-nav {
     display: none;
 }
@@ -1827,6 +1883,17 @@ html[data-theme='dark'] .data-table--clients tbody tr:hover {
 @media (max-width: 720px) {
     .app-shell__main {
         padding: 16px;
+    }
+
+    .app-install-banner {
+        grid-template-columns: 1fr;
+        justify-items: start;
+        padding: 16px;
+        margin-bottom: 18px;
+    }
+
+    .app-install-banner__action {
+        width: 100%;
     }
 
     .data-table table {

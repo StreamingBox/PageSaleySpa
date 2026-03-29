@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import AppInstallBanner from './AppInstallBanner';
 import MobileBottomNav from './MobileBottomNav';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
@@ -78,6 +79,7 @@ export default function AppShell({ children, meta }) {
                         setTheme(current => (current === 'dark' ? 'light' : 'dark'))
                     }
                 />
+                <AppInstallBanner />
                 <main className="app-shell__content">{children}</main>
                 <MobileBottomNav />
             </div>
