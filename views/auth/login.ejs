@@ -437,6 +437,36 @@
             font-weight: 600;
         }
 
+        .apk-link {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            background: #1f2749;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 0.96rem;
+            font-weight: 700;
+            box-shadow: 0 18px 28px rgba(31, 39, 73, 0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        .apk-link:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.03);
+            box-shadow: 0 22px 32px rgba(31, 39, 73, 0.28);
+            text-decoration: none;
+        }
+
+        .apk-link svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+        }
+
         .bottom-flourish {
             position: relative;
             z-index: 1;
@@ -577,6 +607,15 @@
             <div class="auth-links">
                 <span class="secondary-link">¿Olvidaste tu contraseña?</span>
                 <a class="register-link" href="/register">Regístrate aquí</a>
+                <a class="apk-link" href="/downloads/SaleySpa.apk" download>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 3h6l5 5v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path>
+                        <path d="M14 3v5h5"></path>
+                        <path d="M12 11v6"></path>
+                        <path d="m9.5 14.5 2.5 2.5 2.5-2.5"></path>
+                    </svg>
+                    <span>Descargar app (APK)</span>
+                </a>
             </div>
 
             <div class="bottom-flourish" aria-hidden="true"></div>

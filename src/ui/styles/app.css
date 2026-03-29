@@ -3013,7 +3013,7 @@ html[data-theme='dark'] .kpi-card:hover {
 
 @media (max-width: 720px) {
     .app-shell__content {
-        padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(148px + env(safe-area-inset-bottom, 0px));
     }
 
     .mobile-bottom-nav {
@@ -3025,9 +3025,9 @@ html[data-theme='dark'] .kpi-card:hover {
         bottom: 0;
         z-index: 30;
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 4px 2px;
-        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+        padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
         border-radius: 18px 18px 0 0;
         border: 1px solid var(--border);
         border-bottom: 0;
@@ -3043,15 +3043,16 @@ html[data-theme='dark'] .kpi-card:hover {
         min-width: 0;
         gap: 3px;
         justify-items: center;
-        padding: 6px 1px;
+        padding: 7px 1px;
         border-radius: 12px;
         color: var(--muted);
-        font-size: 10px;
+        font-size: 9px;
         line-height: 1.1;
         font-weight: 700;
         text-align: center;
         transition: var(--transition);
-        word-break: break-word;
+        word-break: normal;
+        overflow-wrap: anywhere;
     }
 
     .mobile-bottom-nav__link svg {
