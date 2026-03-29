@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Download, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BarChart3, Download, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { buildClientSelectOptions } from '../lib/clientOptions';
 import { applyVisibleLimit, compareDate, compareNumber, compareText } from '../lib/collections';
@@ -208,6 +208,10 @@ export default function SalesListPage() {
                 <Link className="button button--primary" to="/sales/new">
                     <Plus size={16} />
                     Registrar venta
+                </Link>
+                <Link className="button button--ghost" to="/analytics">
+                    <BarChart3 size={16} />
+                    Ver estadisticas
                 </Link>
                 <a className="button button--ghost" href={getExportUrl(filters)}>
                     <Download size={16} />

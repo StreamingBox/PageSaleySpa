@@ -123,9 +123,11 @@ async function listAvailableYears() {
 
 async function getSalesAnalytics(inputYear = '') {
     const availableYears = await listAvailableYears();
-    const year = availableYears.includes(Number(inputYear))
-        ? Number(inputYear)
-        : normalizeYear(inputYear);
+    const normalizedInputYear = normalizeYear(inputYear);
+    const year =
+        availableYears.includes(Number(inputYear)) || availableYears.includes(normalizedInputYear)
+            ? Number(inputYear) || normalizedInputYear
+            : availableYears[0];
 
     const [rows] = await pool.execute(
         `

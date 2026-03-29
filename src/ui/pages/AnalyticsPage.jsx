@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
     CalendarRange,
     ChartColumnBig,
-    ChartNoAxesCombined,
     Package,
+    Plus,
+    ShoppingBag,
     Trophy
 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
@@ -233,8 +235,7 @@ function DonutChart({ items }) {
 }
 
 export default function AnalyticsPage() {
-    const currentYear = new Date().getFullYear();
-    const [year, setYear] = useState(String(currentYear));
+    const [year, setYear] = useState('');
     const [granularity, setGranularity] = useState('monthly');
     const [chartStyle, setChartStyle] = useState('area');
     const [selectedMonths, setSelectedMonths] = useState([]);
@@ -245,6 +246,14 @@ export default function AnalyticsPage() {
     });
 
     const payload = analyticsQuery.data?.data;
+
+    useEffect(() => {
+        if (!payload?.years?.length) {
+            return;
+        }
+
+        setYear(current => (current ? current : String(payload.year || payload.years[0])));
+    }, [payload?.year, payload?.years]);
 
     useEffect(() => {
         if (!payload?.months?.length) {
@@ -332,7 +341,19 @@ export default function AnalyticsPage() {
         return (
             <EmptyState
                 title="Sin ventas para analizar"
-                description="Registra ventas activas para habilitar el modulo de estadisticas."
+                description="Este modulo depende directamente del historial de ventas activas. Registra una venta o revisa el listado comercial."
+                action={
+                    <div className="page-actions">
+                        <Link className="button button--primary" to="/sales/new">
+                            <Plus size={16} />
+                            Registrar venta
+                        </Link>
+                        <Link className="button button--ghost" to="/sales">
+                            <ShoppingBag size={16} />
+                            Ver ventas
+                        </Link>
+                    </div>
+                }
             />
         );
     }
@@ -349,8 +370,8 @@ export default function AnalyticsPage() {
                             <p className="hero__eyebrow">Analitica comercial</p>
                             <h3>Mis Analiticas de Ventas</h3>
                             <p className="analytics-hero__copy">
-                                Selecciona hasta {MONTH_COMPARE_LIMIT} meses para comparar y
-                                desglosa el rendimiento mensual o semanal del periodo.
+                                Modulo conectado al historial de ventas activas. Compara meses,
+                                identifica top servicios y revisa el comportamiento comercial del periodo.
                             </p>
                         </div>
                     </div>
@@ -404,6 +425,17 @@ export default function AnalyticsPage() {
                         </div>
                     </div>
                 </header>
+
+                <section className="page-actions">
+                    <Link className="button button--primary" to="/sales/new">
+                        <Plus size={16} />
+                        Registrar venta
+                    </Link>
+                    <Link className="button button--ghost" to="/sales">
+                        <ShoppingBag size={16} />
+                        Ir a ventas
+                    </Link>
+                </section>
 
                 <section className="analytics-chip-panel">
                     <span className="analytics-chip-panel__label">Comparar:</span>
