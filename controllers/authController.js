@@ -68,8 +68,16 @@ function buildSessionUser(user) {
     };
 }
 
-exports.showLogin = (_req, res) =>
-    res.render('auth/login', { error: null, email: '' });
+function renderLogin(res, payload = {}) {
+    return res.render('auth/login', {
+        error: null,
+        email: '',
+        rememberSession: false,
+        ...payload
+    });
+}
+
+exports.showLogin = (_req, res) => renderLogin(res);
 
 exports.showRegister = (_req, res) =>
     res.render('auth/register', {
@@ -113,24 +121,32 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     const { email, password } = req.body || {};
+    const rememberSession =
+        req.body?.remember_session === '1' || req.body?.remember_session === 'on';
 
     if (!email || !password) {
-        return res.render('auth/login', {
+        return renderLogin(res, {
             error: 'Ingrese correo y contrasena.',
-            email
+            email,
+            rememberSession
         });
     }
 
     try {
         const user = await findUserByEmail(email);
         if (!user || !(await verifyPassword(password, user.password))) {
-            return res.render('auth/login', {
+            return renderLogin(res, {
                 error: 'Credenciales invalidas.',
-                email
+                email,
+                rememberSession
             });
         }
 
         req.session.user = buildSessionUser(user);
+        req.session.rememberSession = rememberSession;
+        req.session.cookie.maxAge = rememberSession
+            ? res.app.locals.rememberSessionTtlMs
+            : res.app.locals.sessionTtlMs;
 
         const fallbackPath = req.session.user.role === 'admin' ? '/' : '/appointments';
         const dest = req.session.returnTo || fallbackPath;
@@ -138,9 +154,10 @@ exports.login = async (req, res) => {
         req.session.save(() => res.redirect(dest));
     } catch (err) {
         console.error(err);
-        res.render('auth/login', {
+        renderLogin(res, {
             error: 'Error al iniciar sesion.',
-            email
+            email,
+            rememberSession
         });
     }
 };

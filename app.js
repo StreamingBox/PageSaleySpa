@@ -11,7 +11,10 @@ const exportRoutes = require('./routes/exportRoutes');
 
 const app = express();
 const DEFAULT_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+const DEFAULT_REMEMBER_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const sessionTtlMs = Number(process.env.SESSION_TTL_MS) || DEFAULT_SESSION_TTL_MS;
+const rememberSessionTtlMs =
+    Number(process.env.REMEMBER_SESSION_TTL_MS) || DEFAULT_REMEMBER_SESSION_TTL_MS;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -33,6 +36,9 @@ app.use(
         }
     })
 );
+
+app.locals.sessionTtlMs = sessionTtlMs;
+app.locals.rememberSessionTtlMs = rememberSessionTtlMs;
 
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));

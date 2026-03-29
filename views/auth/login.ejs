@@ -296,6 +296,31 @@
             gap: 12px;
         }
 
+        .remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 4px;
+        }
+
+        .remember-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.92rem;
+            cursor: pointer;
+        }
+
+        .remember-toggle input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: #a978c4;
+            box-shadow: none;
+        }
+
         .form-item {
             display: grid;
             gap: 8px;
@@ -572,6 +597,19 @@
                 </div>
 
                 <button class="auth-btn" type="submit">Iniciar Sesión</button>
+                <div class="remember-row">
+                    <label class="remember-toggle" for="remember_session">
+                        <input
+                            type="checkbox"
+                            id="remember_session"
+                            name="remember_session"
+                            value="1"
+                            <%= rememberSession ? 'checked' : '' %>
+                        >
+                        <span>Mantener sesiÃ³n en este dispositivo</span>
+                    </label>
+                </div>
+
             </form>
 
             <div class="auth-links">
