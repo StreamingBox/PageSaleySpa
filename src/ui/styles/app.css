@@ -2445,6 +2445,11 @@ html[data-theme='dark'] .kpi-card:hover {
     align-content: start;
 }
 
+.appointments-grid > .appointments-panel:only-child,
+.appointments-grid > .appointments-panel-section:only-child {
+    grid-column: 1 / -1;
+}
+
 .appointments-filter-bar {
     padding: 0;
     background: transparent;
