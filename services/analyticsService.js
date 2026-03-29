@@ -2,16 +2,16 @@ const pool = require('../config/db');
 const { formatProperCase } = require('../utils/properCase');
 
 const PRODUCT_COLORS = [
-    '#22b8ff',
-    '#8b5cf6',
-    '#1fd18f',
-    '#ffb11f',
-    '#ff5470',
-    '#f857a6',
-    '#4c8dff',
-    '#20c4d8',
-    '#7ce56d',
-    '#ff7b39'
+    '#a777cf',
+    '#79cfcd',
+    '#7db68d',
+    '#d7a56f',
+    '#d84f5f',
+    '#c58fcf',
+    '#8d84a0',
+    '#90c9c8',
+    '#cdb3de',
+    '#e4b98f'
 ];
 
 function parseFlexibleDateParts(value) {
