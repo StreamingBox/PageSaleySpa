@@ -87,6 +87,13 @@ async function getClientRowByHash(hash) {
     return rows.length ? rows[0] : null;
 }
 
+async function getClientRowById(id) {
+    await ensureClientSchema();
+
+    const [rows] = await pool.execute('SELECT * FROM clients WHERE id = ?', [id]);
+    return rows.length ? rows[0] : null;
+}
+
 async function listClients({ search = '' } = {}) {
     await ensureClientSchema();
 
@@ -108,6 +115,11 @@ async function listClients({ search = '' } = {}) {
 
 async function getClientByHash(hash) {
     const row = await getClientRowByHash(hash);
+    return row ? mapClient(row) : null;
+}
+
+async function getClientById(id) {
+    const row = await getClientRowById(id);
     return row ? mapClient(row) : null;
 }
 
@@ -152,10 +164,47 @@ async function updateClientAvatar(hash, avatarEmoji) {
     return getClientByHash(hash);
 }
 
+async function updateClientById(id, { name, phone, address, complemento }) {
+    await ensureClientSchema();
+
+    await pool.execute(
+        `UPDATE clients
+            SET name = ?, phone = ?, address = ?, complemento = ?
+          WHERE id = ?`,
+        [name, phone || null, address || null, complemento || null, id]
+    );
+
+    return getClientById(id);
+}
+
+async function updateClientAvatarById(id, avatarEmoji) {
+    await ensureClientSchema();
+
+    await pool.execute(
+        `UPDATE clients
+            SET avatar_emoji = ?
+          WHERE id = ?`,
+        [avatarEmoji || null, id]
+    );
+
+    return getClientById(id);
+}
+
 async function getClientProfileByHash(hash) {
     await ensureInvoiceSchema();
 
     const clientRow = await getClientRowByHash(hash);
+    return buildClientProfile(clientRow);
+}
+
+async function getClientProfileById(id) {
+    await ensureInvoiceSchema();
+
+    const clientRow = await getClientRowById(id);
+    return buildClientProfile(clientRow);
+}
+
+async function buildClientProfile(clientRow) {
     if (!clientRow) {
         return null;
     }
@@ -242,9 +291,13 @@ async function getClientProfileByHash(hash) {
 
 module.exports = {
     createClient,
+    getClientById,
     getClientByHash,
+    getClientProfileById,
     getClientProfileByHash,
     listClients,
+    updateClientById,
     updateClient,
+    updateClientAvatarById,
     updateClientAvatar
 };

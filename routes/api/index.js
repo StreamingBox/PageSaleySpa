@@ -5,7 +5,8 @@ const slugify = require('slugify');
 const { subDays } = require('date-fns');
 const { asyncHandler } = require('../../utils/asyncHandler');
 const { sendData, sendError } = require('../../utils/apiResponse');
-const { isApiAuth } = require('../../middleware/apiAuth');
+const { isApiAuth, requireApiRoles } = require('../../middleware/apiAuth');
+const { isAdminSession } = require('../../middleware/authorization');
 const { parseIsoDate, toIsoDate } = require('../../utils/dateRange');
 const { renderInvoicePdf } = require('../../utils/invoicePdf');
 const {
@@ -14,10 +15,12 @@ const {
     createAppointment,
     createAppointmentBlock,
     deleteAppointmentBlock,
+    getAppointmentById,
     getAppointmentSettings,
     getAppointmentSummary,
     listAppointmentAvailability,
     listAppointments,
+    updateAppointment,
     updateAppointmentSettings
 } = require('../../services/appointmentsService');
 const {
@@ -28,11 +31,15 @@ const {
     updateCategory
 } = require('../../services/categoriesService');
 const {
+    getClientById,
     createClient,
     getClientByHash,
+    getClientProfileById,
     getClientProfileByHash,
     listClients,
+    updateClientById,
     updateClient,
+    updateClientAvatarById,
     updateClientAvatar
 } = require('../../services/clientsService');
 const { getDashboardSummary } = require('../../services/dashboardService');
@@ -105,6 +112,17 @@ const upload = multer({
     }
 });
 
+function requireOwnClient(req, res) {
+    const clientId = Number(req.session?.user?.client_id || 0);
+
+    if (!clientId) {
+        sendError(res, 403, 'Tu usuario no tiene un perfil de cliente asociado');
+        return null;
+    }
+
+    return clientId;
+}
+
 function validateSaleDate(soldAt) {
     const parsedSaleDate = parseIsoDate(soldAt);
 
@@ -133,6 +151,7 @@ router.get(
 
 router.get(
     '/dashboard',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await getDashboardSummary({
             start: req.query.start,
@@ -147,6 +166,7 @@ router.get(
 
 router.get(
     '/clients',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await listClients({ search: req.query.search || '' });
         sendData(res, data);
@@ -155,6 +175,7 @@ router.get(
 
 router.get(
     '/clients/:hash',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const client = await getClientByHash(req.params.hash);
         if (!client) return sendError(res, 404, 'Cliente no encontrado');
@@ -165,6 +186,7 @@ router.get(
 
 router.get(
     '/clients/:hash/profile',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const profile = await getClientProfileByHash(req.params.hash);
         if (!profile) return sendError(res, 404, 'Cliente no encontrado');
@@ -175,6 +197,7 @@ router.get(
 
 router.post(
     '/clients',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { name, phone, address, complemento } = req.body || {};
         if (!name || !String(name).trim()) {
@@ -195,6 +218,7 @@ router.post(
 
 router.put(
     '/clients/:hash',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { name, phone, address, complemento } = req.body || {};
         if (!name || !String(name).trim()) {
@@ -215,6 +239,7 @@ router.put(
 
 router.put(
     '/clients/:hash/avatar',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const client = await updateClientAvatar(
             req.params.hash,
@@ -222,6 +247,70 @@ router.put(
         );
 
         if (!client) return sendError(res, 404, 'Cliente no encontrado');
+        sendData(res, client);
+    })
+);
+
+router.get(
+    '/me/profile',
+    asyncHandler(async (req, res) => {
+        const clientId = requireOwnClient(req, res);
+        if (!clientId) return;
+
+        const profile = await getClientProfileById(clientId);
+        if (!profile) return sendError(res, 404, 'Perfil no encontrado');
+
+        sendData(res, profile);
+    })
+);
+
+router.get(
+    '/me/client',
+    asyncHandler(async (req, res) => {
+        const clientId = requireOwnClient(req, res);
+        if (!clientId) return;
+
+        const client = await getClientById(clientId);
+        if (!client) return sendError(res, 404, 'Perfil no encontrado');
+
+        sendData(res, client);
+    })
+);
+
+router.put(
+    '/me/client',
+    asyncHandler(async (req, res) => {
+        const clientId = requireOwnClient(req, res);
+        if (!clientId) return;
+
+        const { name, phone, address, complemento } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return sendError(res, 400, 'El nombre es obligatorio');
+        }
+
+        const client = await updateClientById(clientId, {
+            name: String(name).trim(),
+            phone: phone || '',
+            address: address || '',
+            complemento: complemento || ''
+        });
+
+        req.session.user.username = client.name;
+        sendData(res, client);
+    })
+);
+
+router.put(
+    '/me/avatar',
+    asyncHandler(async (req, res) => {
+        const clientId = requireOwnClient(req, res);
+        if (!clientId) return;
+
+        const client = await updateClientAvatarById(
+            clientId,
+            String(req.body?.avatar_emoji || '').trim()
+        );
+
         sendData(res, client);
     })
 );
@@ -236,6 +325,7 @@ router.get(
 
 router.put(
     '/appointments/settings',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await updateAppointmentSettings(req.body || {});
         sendData(res, data);
@@ -245,7 +335,10 @@ router.put(
 router.get(
     '/appointments/summary',
     asyncHandler(async (req, res) => {
-        const data = await getAppointmentSummary(req.query.date || '');
+        const data = await getAppointmentSummary(
+            req.query.date || '',
+            isAdminSession(req) ? '' : req.session.user.client_id || ''
+        );
         sendData(res, data);
     })
 );
@@ -256,7 +349,8 @@ router.get(
         const data = await listAppointmentAvailability(
             req.query.date || '',
             req.query.product_id || '',
-            req.query.duration_minutes || ''
+            req.query.duration_minutes || '',
+            req.query.exclude_appointment_id || ''
         );
         sendData(res, data);
     })
@@ -269,7 +363,8 @@ router.get(
             date: req.query.date || '',
             status: req.query.status || '',
             startDate: req.query.start_date || '',
-            limit: req.query.limit || ''
+            limit: req.query.limit || '',
+            clientId: isAdminSession(req) ? '' : req.session.user.client_id || ''
         });
         sendData(res, data);
     })
@@ -278,7 +373,15 @@ router.get(
 router.post(
     '/appointments',
     asyncHandler(async (req, res) => {
-        const appointment = await createAppointment(req.body || {});
+        const payload = { ...(req.body || {}) };
+
+        if (!isAdminSession(req)) {
+            const clientId = requireOwnClient(req, res);
+            if (!clientId) return;
+            payload.client_id = clientId;
+        }
+
+        const appointment = await createAppointment(payload);
         res.status(201);
         sendData(res, appointment);
     })
@@ -286,6 +389,7 @@ router.post(
 
 router.patch(
     '/appointments/:id/confirm',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const appointment = await confirmAppointment(req.params.id);
         if (!appointment) return sendError(res, 404, 'Cita no encontrada');
@@ -293,8 +397,39 @@ router.patch(
     })
 );
 
+router.put(
+    '/appointments/:id',
+    asyncHandler(async (req, res) => {
+        const clientId = isAdminSession(req)
+            ? ''
+            : requireOwnClient(req, res);
+
+        if (!isAdminSession(req) && !clientId) {
+            return;
+        }
+
+        const existingAppointment = await getAppointmentById(req.params.id, {
+            clientId
+        });
+
+        if (!existingAppointment) {
+            return sendError(res, 404, 'Cita no encontrada');
+        }
+
+        const payload = { ...(req.body || {}) };
+
+        if (!isAdminSession(req)) {
+            payload.client_id = clientId;
+        }
+
+        const appointment = await updateAppointment(req.params.id, payload);
+        sendData(res, appointment);
+    })
+);
+
 router.patch(
     '/appointments/:id/cancel',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const appointment = await cancelAppointment(
             req.params.id,
@@ -308,6 +443,7 @@ router.patch(
 
 router.post(
     '/appointments/blocks',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await createAppointmentBlock(req.body || {});
         res.status(201);
@@ -317,6 +453,7 @@ router.post(
 
 router.delete(
     '/appointments/blocks/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await deleteAppointmentBlock(req.params.id, req.query.date || '');
         sendData(res, data);
@@ -333,6 +470,7 @@ router.get(
 
 router.get(
     '/products/:hash',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const product = await getProductByHash(req.params.hash);
         if (!product) return sendError(res, 404, 'Producto no encontrado');
@@ -343,6 +481,7 @@ router.get(
 
 router.post(
     '/products',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { name, price, duration_minutes } = req.body || {};
         if (!name || !String(name).trim()) {
@@ -370,6 +509,7 @@ router.post(
 
 router.put(
     '/products/:hash',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { name, price, duration_minutes } = req.body || {};
         if (!name || !String(name).trim()) {
@@ -397,6 +537,7 @@ router.put(
 
 router.get(
     '/categories',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await listCategories({ search: req.query.search || '' });
         sendData(res, data);
@@ -405,6 +546,7 @@ router.get(
 
 router.get(
     '/categories/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const category = await getCategoryById(req.params.id);
         if (!category) return sendError(res, 404, 'Categoría no encontrada');
@@ -415,6 +557,7 @@ router.get(
 
 router.post(
     '/categories',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { name } = req.body || {};
         if (!name || !String(name).trim()) {
@@ -429,6 +572,7 @@ router.post(
 
 router.put(
     '/categories/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { name } = req.body || {};
         if (!name || !String(name).trim()) {
@@ -446,6 +590,7 @@ router.put(
 
 router.delete(
     '/categories/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         await deleteCategory(req.params.id);
         res.status(204).end();
@@ -454,6 +599,7 @@ router.delete(
 
 router.get(
     '/sales',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await listSales({
             start: req.query.start,
@@ -468,6 +614,7 @@ router.get(
 
 router.get(
     '/sales/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const sale = await getSaleById(req.params.id);
         if (!sale) return sendError(res, 404, 'Venta no encontrada');
@@ -478,6 +625,7 @@ router.get(
 
 router.get(
     '/invoices',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await listInvoices({
             start: req.query.start,
@@ -493,6 +641,7 @@ router.get(
 
 router.get(
     '/invoices/candidates',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const data = await listInvoiceCandidates(req.query.client_id);
         sendData(res, data);
@@ -501,6 +650,7 @@ router.get(
 
 router.post(
     '/invoices',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const invoice = await createInvoice(req.body || {});
         res.status(201);
@@ -510,6 +660,7 @@ router.post(
 
 router.patch(
     '/invoices/:publicId/pay',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const invoice = await markInvoicePaid(req.params.publicId, req.body || {});
         sendData(res, invoice);
@@ -518,6 +669,7 @@ router.patch(
 
 router.get(
     '/invoices/:publicId/pdf',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const invoice = await getInvoiceById(req.params.publicId);
         if (!invoice) return sendError(res, 404, 'Factura no encontrada');
@@ -537,6 +689,7 @@ router.get(
 
 router.get(
     '/invoices/:publicId',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const invoice = await getInvoiceById(req.params.publicId);
         if (!invoice) return sendError(res, 404, 'Factura no encontrada');
@@ -547,6 +700,7 @@ router.get(
 
 router.post(
     '/sales',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
         const missing = required.find(field => !req.body?.[field]);
@@ -563,6 +717,7 @@ router.post(
 
 router.put(
     '/sales/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
         const missing = required.find(field => !req.body?.[field]);
@@ -580,6 +735,7 @@ router.put(
 
 router.delete(
     '/sales/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         await deactivateSale(req.params.id);
         res.status(204).end();
@@ -588,6 +744,7 @@ router.delete(
 
 router.get(
     '/movements',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const { rows, meta } = await listMovements({
             start: req.query.start,
@@ -603,6 +760,7 @@ router.get(
 
 router.get(
     '/movements/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const movement = await getMovementById(req.params.id);
         if (!movement) return sendError(res, 404, 'Movimiento no encontrado');
@@ -613,6 +771,7 @@ router.get(
 
 router.post(
     '/movements',
+    requireApiRoles('admin'),
     upload.single('attachment'),
     asyncHandler(async (req, res) => {
         const { date, type, amount, payment_type, category, description, account } =
@@ -640,6 +799,7 @@ router.post(
 
 router.put(
     '/movements/:id',
+    requireApiRoles('admin'),
     upload.single('attachment'),
     asyncHandler(async (req, res) => {
         const { date, type, amount, payment_type, category, description, account } =
@@ -668,6 +828,7 @@ router.put(
 
 router.delete(
     '/movements/:id',
+    requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         await deleteMovement(req.params.id);
         res.status(204).end();

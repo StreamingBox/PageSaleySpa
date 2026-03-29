@@ -8,6 +8,7 @@ import {
     ExternalLink,
     LayoutGrid,
     MapPin,
+    PencilLine,
     ReceiptText,
     Trash2
 } from 'lucide-react';
@@ -19,7 +20,10 @@ import SearchableSelect from '../components/SearchableSelect';
 import KpiCard from '../components/KpiCard';
 import EmptyState from '../components/EmptyState';
 import ConfirmDialog from '../components/ConfirmDialog';
+import AppointmentEditorDrawer from '../components/AppointmentEditorDrawer';
 import { useToast } from '../components/Toast';
+import { getSessionUser } from '../lib/navigation';
+import UserAppointmentsPage from './UserAppointmentsPage';
 
 const appointmentStatusOptions = [
     { value: '', label: 'Todas', searchText: 'todas' },
@@ -84,7 +88,7 @@ function getStatusClass(status) {
     return 'status-pill status-pill--success';
 }
 
-export default function AppointmentsPage() {
+function AdminAppointmentsPage() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -101,6 +105,7 @@ export default function AppointmentsPage() {
         reason: ''
     });
     const [pendingCancel, setPendingCancel] = useState(null);
+    const [editingAppointment, setEditingAppointment] = useState(null);
 
     const settingsQuery = useQuery({
         queryKey: ['appointment-settings'],
@@ -298,6 +303,28 @@ export default function AppointmentsPage() {
 
                 navigate(`/sales/new?${params.toString()}`);
             }
+        },
+        onError: error => showToast(error.message, 'danger')
+    });
+
+    const updateAppointmentMutation = useMutation({
+        mutationFn: values =>
+            apiFetch(`/api/appointments/${editingAppointment.id}`, {
+                method: 'PUT',
+                body: values
+            }),
+        onSuccess: async result => {
+            const appointment = result?.data;
+            await queryClient.invalidateQueries({ queryKey: ['appointments'] });
+            await queryClient.invalidateQueries({ queryKey: ['appointment-availability'] });
+            await queryClient.invalidateQueries({ queryKey: ['appointment-summary'] });
+            showToast(
+                appointment?.status === 'PROGRAMADA' && editingAppointment?.status === 'CANCELADA'
+                    ? 'Cita reagendada correctamente'
+                    : 'Cita actualizada correctamente',
+                'success'
+            );
+            setEditingAppointment(null);
         },
         onError: error => showToast(error.message, 'danger')
     });
@@ -794,6 +821,19 @@ export default function AppointmentsPage() {
                                                 </a>
                                             ) : null}
 
+                                            {appointment.status !== 'ATENDIDA' ? (
+                                                <button
+                                                    className="button button--ghost"
+                                                    onClick={() => setEditingAppointment(appointment)}
+                                                    type="button"
+                                                >
+                                                    <PencilLine size={16} />
+                                                    {appointment.status === 'CANCELADA'
+                                                        ? 'Reagendar'
+                                                        : 'Editar'}
+                                                </button>
+                                            ) : null}
+
                                             {appointment.status === 'PROGRAMADA' ? (
                                                 <button
                                                     className="button button--primary"
@@ -1047,6 +1087,28 @@ export default function AppointmentsPage() {
                 onCancel={() => setPendingCancel(null)}
                 onConfirm={() => cancelMutation.mutate(pendingCancel)}
             />
+
+            <AppointmentEditorDrawer
+                open={Boolean(editingAppointment)}
+                appointment={editingAppointment}
+                isAdmin
+                clientOptions={clientOptions}
+                productOptions={productOptions}
+                slotMinutes={settingsForm.slot_minutes}
+                onClose={() => setEditingAppointment(null)}
+                onSubmit={values => updateAppointmentMutation.mutate(values)}
+                isPending={updateAppointmentMutation.isPending}
+            />
         </div>
     );
+}
+
+export default function AppointmentsPage() {
+    const user = getSessionUser();
+
+    if (user.role !== 'admin') {
+        return <UserAppointmentsPage />;
+    }
+
+    return <AdminAppointmentsPage />;
 }

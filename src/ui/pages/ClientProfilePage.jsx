@@ -16,6 +16,7 @@ import { apiFetch } from '../lib/api';
 import { formatDate, formatMoney } from '../lib/format';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
+import { getSessionUser } from '../lib/navigation';
 
 const avatarChoices = ['🌸', '💆', '🪷', '✨', '🧴', '💖', '🌿', '🕯️', '🎀', '🌺', '🫧', '💅'];
 
@@ -41,26 +42,33 @@ function buildWhatsappUrl(phone, name) {
 }
 
 export default function ClientProfilePage() {
+    const sessionUser = getSessionUser();
+    const isAdmin = sessionUser.role === 'admin';
     const { hash } = useParams();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
+    const isSelfProfile = !hash;
 
     const profileQuery = useQuery({
-        queryKey: ['client-profile', hash],
-        enabled: Boolean(hash),
-        queryFn: () => apiFetch(`/api/clients/${hash}/profile`)
+        queryKey: ['client-profile', hash || 'self'],
+        enabled: Boolean(hash) || isSelfProfile,
+        queryFn: () =>
+            isSelfProfile
+                ? apiFetch('/api/me/profile')
+                : apiFetch(`/api/clients/${hash}/profile`)
     });
 
     const avatarMutation = useMutation({
         mutationFn: avatarEmoji =>
-            apiFetch(`/api/clients/${hash}/avatar`, {
+            apiFetch(isSelfProfile ? '/api/me/avatar' : `/api/clients/${hash}/avatar`, {
                 method: 'PUT',
                 body: { avatar_emoji: avatarEmoji }
             }),
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['client-profile', hash] });
+            await queryClient.invalidateQueries({ queryKey: ['client-profile', hash || 'self'] });
             await queryClient.invalidateQueries({ queryKey: ['clients'] });
+            await queryClient.invalidateQueries({ queryKey: ['my-profile'] });
             showToast('Emoji actualizado', 'success');
         },
         onError: error => {
@@ -98,8 +106,8 @@ export default function ClientProfilePage() {
                 title="Cliente no encontrado"
                 description="No encontre informacion disponible para este perfil."
                 action={
-                    <Link className="button button--primary" to="/clients">
-                        Volver a clientes
+                    <Link className="button button--primary" to={isAdmin ? '/clients' : '/appointments'}>
+                        {isAdmin ? 'Volver a clientes' : 'Volver a citas'}
                     </Link>
                 }
             />
@@ -128,20 +136,28 @@ export default function ClientProfilePage() {
             onClick: () =>
                 document.getElementById('profile-address')?.scrollIntoView({ behavior: 'smooth' })
         },
-        {
-            icon: ClipboardList,
-            title: 'Historial de compras',
-            subtitle: `${summary.sales_count} ventas activas`,
-            onClick: () =>
-                document.getElementById('profile-sales')?.scrollIntoView({ behavior: 'smooth' })
-        },
-        {
-            icon: Settings2,
-            title: 'Facturacion y saldo',
-            subtitle: `${summary.invoices_count} facturas emitidas`,
-            onClick: () =>
-                document.getElementById('profile-billing')?.scrollIntoView({ behavior: 'smooth' })
-        }
+        ...(isAdmin
+            ? [
+                  {
+                      icon: ClipboardList,
+                      title: 'Historial de compras',
+                      subtitle: `${summary.sales_count} ventas activas`,
+                      onClick: () =>
+                          document
+                              .getElementById('profile-sales')
+                              ?.scrollIntoView({ behavior: 'smooth' })
+                  },
+                  {
+                      icon: Settings2,
+                      title: 'Facturacion y saldo',
+                      subtitle: `${summary.invoices_count} facturas emitidas`,
+                      onClick: () =>
+                          document
+                              .getElementById('profile-billing')
+                              ?.scrollIntoView({ behavior: 'smooth' })
+                  }
+              ]
+            : [])
     ];
 
     return (
@@ -149,11 +165,11 @@ export default function ClientProfilePage() {
             <section className="profile-hero panel">
                 <button
                     className="inline-link profile-hero__back"
-                    onClick={() => navigate('/clients')}
+                    onClick={() => navigate(isAdmin ? '/clients' : '/appointments')}
                     type="button"
                 >
                     <ArrowLeft size={16} />
-                    Volver a clientes
+                    {isAdmin ? 'Volver a clientes' : 'Volver a citas'}
                 </button>
 
                 <div className="profile-hero__cover" aria-hidden="true" />
@@ -220,6 +236,18 @@ export default function ClientProfilePage() {
                         );
                     })}
                 </div>
+
+                {!isAdmin ? (
+                    <div className="client-detail__actions">
+                        <button
+                            className="button button--primary"
+                            onClick={() => navigate('/profile/edit')}
+                            type="button"
+                        >
+                            Editar mis datos
+                        </button>
+                    </div>
+                ) : null}
             </section>
 
             <section className="kpi-grid">
@@ -305,125 +333,133 @@ export default function ClientProfilePage() {
                             </a>
                         ) : null}
 
-                        <a className="button button--ghost" href={`/sales?client_id=${client.id}`}>
-                            <ClipboardList size={16} />
-                            Ver ventas
-                        </a>
+                        {isAdmin ? (
+                            <a className="button button--ghost" href={`/sales?client_id=${client.id}`}>
+                                <ClipboardList size={16} />
+                                Ver ventas
+                            </a>
+                        ) : null}
 
-                        <a className="button button--ghost" href={`/invoices?client_id=${client.id}`}>
-                            <FileText size={16} />
-                            Ver facturas
-                        </a>
+                        {isAdmin ? (
+                            <a className="button button--ghost" href={`/invoices?client_id=${client.id}`}>
+                                <FileText size={16} />
+                                Ver facturas
+                            </a>
+                        ) : null}
                     </div>
                 </section>
 
-                <section className="panel profile-section" id="profile-billing">
+                {isAdmin ? (
+                    <section className="panel profile-section" id="profile-billing">
+                        <div className="panel__header">
+                            <div>
+                                <p className="panel__eyebrow">Resumen</p>
+                                <h3>Facturacion y saldo</h3>
+                            </div>
+                        </div>
+
+                        <div className="profile-stat-list">
+                            <article className="profile-stat-card">
+                                <span className="profile-stat-card__icon">
+                                    <BadgeDollarSign size={18} />
+                                </span>
+                                <div>
+                                    <strong>{formatMoney(summary.pending_balance)}</strong>
+                                    <small>Saldo pendiente actual</small>
+                                </div>
+                            </article>
+
+                            <article className="profile-stat-card">
+                                <span className="profile-stat-card__icon">
+                                    <FileText size={18} />
+                                </span>
+                                <div>
+                                    <strong>{summary.invoices_count}</strong>
+                                    <small>Facturas emitidas</small>
+                                </div>
+                            </article>
+                        </div>
+
+                        {payload.recent_invoices.length ? (
+                            <div className="profile-history-list">
+                                {payload.recent_invoices.map(invoice => (
+                                    <article className="profile-history-card" key={invoice.public_id}>
+                                        <div>
+                                            <strong>{invoice.invoice_number}</strong>
+                                            <small>{formatDate(invoice.issue_date)}</small>
+                                        </div>
+                                        <div className="profile-history-card__meta">
+                                            <span
+                                                className={`status-pill status-pill--${
+                                                    invoice.status === 'PAGADA' ? 'success' : 'warning'
+                                                }`}
+                                            >
+                                                {invoice.status}
+                                            </span>
+                                            <strong>{formatMoney(invoice.total)}</strong>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="metric-empty">
+                                Todavia no hay facturas registradas para este cliente.
+                            </p>
+                        )}
+                    </section>
+                ) : null}
+            </div>
+
+            {isAdmin ? (
+                <section className="panel profile-section" id="profile-sales">
                     <div className="panel__header">
                         <div>
-                            <p className="panel__eyebrow">Resumen</p>
-                            <h3>Facturacion y saldo</h3>
+                            <p className="panel__eyebrow">Actividad</p>
+                            <h3>Compras recientes</h3>
                         </div>
                     </div>
 
-                    <div className="profile-stat-list">
-                        <article className="profile-stat-card">
-                            <span className="profile-stat-card__icon">
-                                <BadgeDollarSign size={18} />
-                            </span>
-                            <div>
-                                <strong>{formatMoney(summary.pending_balance)}</strong>
-                                <small>Saldo pendiente actual</small>
-                            </div>
-                        </article>
-
-                        <article className="profile-stat-card">
-                            <span className="profile-stat-card__icon">
-                                <FileText size={18} />
-                            </span>
-                            <div>
-                                <strong>{summary.invoices_count}</strong>
-                                <small>Facturas emitidas</small>
-                            </div>
-                        </article>
-                    </div>
-
-                    {payload.recent_invoices.length ? (
+                    {payload.recent_sales.length ? (
                         <div className="profile-history-list">
-                            {payload.recent_invoices.map(invoice => (
-                                <article className="profile-history-card" key={invoice.public_id}>
+                            {payload.recent_sales.map(sale => (
+                                <article className="profile-history-card" key={sale.id}>
                                     <div>
-                                        <strong>{invoice.invoice_number}</strong>
-                                        <small>{formatDate(invoice.issue_date)}</small>
+                                        <strong>{sale.product_name}</strong>
+                                        <small>
+                                            {formatDate(sale.sold_at)} · {sale.quantity} unidad
+                                            {sale.quantity === 1 ? '' : 'es'}
+                                        </small>
                                     </div>
                                     <div className="profile-history-card__meta">
-                                        <span
-                                            className={`status-pill status-pill--${
-                                                invoice.status === 'PAGADA' ? 'success' : 'warning'
-                                            }`}
-                                        >
-                                            {invoice.status}
-                                        </span>
-                                        <strong>{formatMoney(invoice.total)}</strong>
+                                        {sale.invoice_public_id ? (
+                                            <Link
+                                                className="inline-link"
+                                                to={`/invoices/${sale.invoice_public_id}`}
+                                            >
+                                                {sale.invoice_number}
+                                            </Link>
+                                        ) : (
+                                            <span
+                                                className={`status-pill status-pill--${
+                                                    sale.paid ? 'success' : 'warning'
+                                                }`}
+                                            >
+                                                {sale.paid ? 'PAGADA' : 'PENDIENTE'}
+                                            </span>
+                                        )}
+                                        <strong>{formatMoney(sale.total)}</strong>
                                     </div>
                                 </article>
                             ))}
                         </div>
                     ) : (
-                        <p className="metric-empty">
-                            Todavia no hay facturas registradas para este cliente.
-                        </p>
+                        <EmptyState
+                            title="Sin historial de compras"
+                            description="Este cliente todavia no tiene ventas activas registradas."
+                        />
                     )}
                 </section>
-            </div>
-
-            <section className="panel profile-section" id="profile-sales">
-                <div className="panel__header">
-                    <div>
-                        <p className="panel__eyebrow">Actividad</p>
-                        <h3>Compras recientes</h3>
-                    </div>
-                </div>
-
-                {payload.recent_sales.length ? (
-                    <div className="profile-history-list">
-                        {payload.recent_sales.map(sale => (
-                            <article className="profile-history-card" key={sale.id}>
-                                <div>
-                                    <strong>{sale.product_name}</strong>
-                                    <small>
-                                        {formatDate(sale.sold_at)} · {sale.quantity} unidad
-                                        {sale.quantity === 1 ? '' : 'es'}
-                                    </small>
-                                </div>
-                                <div className="profile-history-card__meta">
-                                    {sale.invoice_public_id ? (
-                                        <Link
-                                            className="inline-link"
-                                            to={`/invoices/${sale.invoice_public_id}`}
-                                        >
-                                            {sale.invoice_number}
-                                        </Link>
-                                    ) : (
-                                        <span
-                                            className={`status-pill status-pill--${
-                                                sale.paid ? 'success' : 'warning'
-                                            }`}
-                                        >
-                                            {sale.paid ? 'PAGADA' : 'PENDIENTE'}
-                                        </span>
-                                    )}
-                                    <strong>{formatMoney(sale.total)}</strong>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                ) : (
-                    <EmptyState
-                        title="Sin historial de compras"
-                        description="Este cliente todavia no tiene ventas activas registradas."
-                    />
-                )}
-            </section>
+            ) : null}
         </div>
     );
 }

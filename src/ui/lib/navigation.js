@@ -6,11 +6,20 @@ import {
     LayoutDashboard,
     Package2,
     ReceiptText,
+    UserRound,
     Users2
 } from 'lucide-react';
 import { matchPath } from 'react-router-dom';
 
-export const navigationItems = [
+export function getSessionUser() {
+    return window.__APP_STATE__?.user || {};
+}
+
+function isAdminUser() {
+    return getSessionUser().role === 'admin';
+}
+
+const adminNavigationItems = [
     {
         to: '/',
         label: 'Dashboard',
@@ -53,9 +62,23 @@ export const navigationItems = [
     }
 ];
 
+const userNavigationItems = [
+    {
+        to: '/appointments',
+        label: 'Citas',
+        icon: CalendarDays
+    },
+    {
+        to: '/profile',
+        label: 'Mi perfil',
+        icon: UserRound
+    }
+];
+
+export const navigationItems = isAdminUser() ? adminNavigationItems : userNavigationItems;
 export const mobileNavigationItems = navigationItems;
 
-const routeMeta = [
+const adminRouteMeta = [
     {
         pattern: '/',
         exact: true,
@@ -145,7 +168,29 @@ const routeMeta = [
     }
 ];
 
+const userRouteMeta = [
+    {
+        pattern: '/appointments',
+        exact: true,
+        title: 'Mis citas',
+        description: 'Agenda una cita nueva y consulta el estado de tus reservas.'
+    },
+    {
+        pattern: '/profile',
+        exact: true,
+        title: 'Mi perfil',
+        description: 'Consulta y actualiza tus datos personales.'
+    },
+    {
+        pattern: '/profile/edit',
+        exact: true,
+        title: 'Editar perfil',
+        description: 'Actualiza tus datos personales registrados.'
+    }
+];
+
 export function getRouteMeta(pathname) {
+    const routeMeta = isAdminUser() ? adminRouteMeta : userRouteMeta;
     const match = routeMeta.find(item =>
         matchPath({ path: item.pattern, end: Boolean(item.exact) }, pathname)
     );

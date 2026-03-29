@@ -1,5 +1,6 @@
 const express = require('express');
 const { isAuth } = require('../middleware/auth');
+const { isAdminSession } = require('../middleware/authorization');
 
 const router = express.Router();
 
@@ -12,13 +13,23 @@ function renderShell(req, res) {
     });
 }
 
+router.get('/', isAuth, (req, res, next) => {
+    if (!isAdminSession(req)) {
+        return res.redirect('/appointments');
+    }
+
+    return next();
+}, renderShell);
+
+['/appointments', '/profile', '/profile/edit'].forEach(routePath => {
+    router.get(routePath, isAuth, renderShell);
+});
+
 [
-    '/',
     '/clients',
     '/clients/new',
     '/clients/:hash',
     '/clients/:hash/edit',
-    '/appointments',
     '/products',
     '/products/new',
     '/products/:hash/edit',
@@ -35,7 +46,13 @@ function renderShell(req, res) {
     '/categories/new',
     '/categories/:id/edit'
 ].forEach(routePath => {
-    router.get(routePath, isAuth, renderShell);
+    router.get(routePath, isAuth, (req, res, next) => {
+        if (!isAdminSession(req)) {
+            return res.redirect('/appointments');
+        }
+
+        return next();
+    }, renderShell);
 });
 
 module.exports = router;

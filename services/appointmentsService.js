@@ -162,6 +162,35 @@ function mapAppointment(row, settings) {
     };
 }
 
+async function getAppointmentRecord(id, clientId = '') {
+    const params = [Number(id)];
+    const clientFilter = Number(clientId) > 0 ? ' AND a.client_id = ?' : '';
+
+    if (Number(clientId) > 0) {
+        params.push(Number(clientId));
+    }
+
+    const [rows] = await pool.execute(
+        `
+            SELECT
+                a.*,
+                c.name AS client_name,
+                c.phone AS client_phone,
+                p.name AS product_name,
+                p.duration_minutes AS product_duration_minutes
+              FROM appointments a
+              JOIN clients c ON c.id = a.client_id
+              JOIN products p ON p.id = a.product_id
+             WHERE a.id = ?
+             ${clientFilter}
+             LIMIT 1
+        `,
+        params
+    );
+
+    return rows[0] || null;
+}
+
 async function ensureAppointmentsSchema() {
     if (ensurePromise) {
         return ensurePromise;
@@ -373,16 +402,25 @@ async function entityExists(table, id) {
     return rows.length > 0;
 }
 
-async function getScheduleConflicts(date) {
+async function getScheduleConflicts(date, excludedAppointmentId = '') {
     const safeDate = normalizeDate(date);
+    const appointmentParams = [safeDate];
+    const appointmentExclusion =
+        Number(excludedAppointmentId) > 0 ? ' AND id <> ?' : '';
+
+    if (Number(excludedAppointmentId) > 0) {
+        appointmentParams.push(Number(excludedAppointmentId));
+    }
+
     const [appointmentRows] = await pool.execute(
         `
             SELECT start_time, end_time
               FROM appointments
              WHERE appointment_date = ?
                AND status <> 'CANCELADA'
+               ${appointmentExclusion}
         `,
-        [safeDate]
+        appointmentParams
     );
     const [blockRows] = await pool.execute(
         `
@@ -405,7 +443,12 @@ async function getScheduleConflicts(date) {
     };
 }
 
-async function listAppointmentAvailability(date, productId, durationMinutesInput) {
+async function listAppointmentAvailability(
+    date,
+    productId,
+    durationMinutesInput,
+    excludedAppointmentId = ''
+) {
     await ensureAppointmentsSchema();
 
     const safeDate = normalizeDate(date);
@@ -423,7 +466,10 @@ async function listAppointmentAvailability(date, productId, durationMinutesInput
     );
     const scheduleStart = timeToMinutes(settings.day_start);
     const scheduleEnd = timeToMinutes(settings.day_end);
-    const { appointments, blocks } = await getScheduleConflicts(safeDate);
+    const { appointments, blocks } = await getScheduleConflicts(
+        safeDate,
+        excludedAppointmentId
+    );
     const slots = [];
     const nowWithLeadTime = Date.now() + settings.lead_time_hours * 60 * 60 * 1000;
 
@@ -466,7 +512,13 @@ async function listAppointmentAvailability(date, productId, durationMinutesInput
     };
 }
 
-async function listAppointments({ date = '', status = '', startDate = '', limit = 0 } = {}) {
+async function listAppointments({
+    date = '',
+    status = '',
+    startDate = '',
+    limit = 0,
+    clientId = ''
+} = {}) {
     await ensureAppointmentsSchema();
 
     const settings = await getAppointmentSettings();
@@ -486,6 +538,11 @@ async function listAppointments({ date = '', status = '', startDate = '', limit 
     if (normalizeDate(startDate)) {
         conditions.push('a.appointment_date >= ?');
         params.push(normalizeDate(startDate));
+    }
+
+    if (Number(clientId) > 0) {
+        conditions.push('a.client_id = ?');
+        params.push(Number(clientId));
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -509,6 +566,15 @@ async function listAppointments({ date = '', status = '', startDate = '', limit 
     );
 
     return rows.map(row => mapAppointment(row, settings));
+}
+
+async function getAppointmentById(id, options = {}) {
+    await ensureAppointmentsSchema();
+
+    const settings = await getAppointmentSettings();
+    const row = await getAppointmentRecord(id, options.clientId || '');
+
+    return row ? mapAppointment(row, settings) : null;
 }
 
 async function createAppointment({
@@ -585,24 +651,10 @@ async function createAppointment({
         [clientId, productId, safeDate, safeTime, minutesToTime(endMinutes), String(notes || '').trim() || null]
     );
 
-    const [rows] = await pool.execute(
-        `
-            SELECT
-                a.*,
-                c.name AS client_name,
-                c.phone AS client_phone,
-                p.name AS product_name,
-                p.duration_minutes AS product_duration_minutes
-              FROM appointments a
-              JOIN clients c ON c.id = a.client_id
-              JOIN products p ON p.id = a.product_id
-             WHERE a.id = ?
-             LIMIT 1
-        `,
-        [result.insertId]
+    const appointment = mapAppointment(
+        await getAppointmentRecord(result.insertId),
+        settings
     );
-
-    const appointment = mapAppointment(rows[0], settings);
 
     if (!isGoogleCalendarConfigured()) {
         return appointment;
@@ -646,6 +698,168 @@ async function createAppointment({
     return appointment;
 }
 
+async function updateAppointment(id, values = {}) {
+    await ensureAppointmentsSchema();
+
+    const appointmentId = Number(id);
+    const existingAppointment = await getAppointmentRecord(appointmentId);
+
+    if (!existingAppointment) {
+        return null;
+    }
+
+    if (existingAppointment.status === 'ATENDIDA') {
+        throw new Error('Una cita atendida no se puede editar ni reagendar');
+    }
+
+    const settings = await getAppointmentSettings();
+    const safeDate = normalizeDate(
+        values.appointment_date || existingAppointment.appointment_date
+    );
+    const safeTime = normalizeTime(values.start_time || existingAppointment.start_time);
+    const clientId = Number(values.client_id || existingAppointment.client_id);
+    const productId = Number(values.product_id || existingAppointment.product_id);
+
+    if (!clientId || !productId || !safeDate || !safeTime) {
+        throw new Error('Completa cliente, servicio, fecha y hora');
+    }
+
+    if (!(await entityExists('clients', clientId))) {
+        throw new Error('El cliente seleccionado no existe');
+    }
+
+    if (!(await entityExists('products', productId))) {
+        throw new Error('El servicio seleccionado no existe');
+    }
+
+    const productDurationMinutes = await getProductDuration(productId);
+    const durationMinutes = normalizeAppointmentDuration(
+        values.duration_minutes || productDurationMinutes,
+        settings.slot_minutes
+    );
+    const startMinutes = timeToMinutes(safeTime);
+    const endMinutes = startMinutes + durationMinutes;
+
+    if (
+        startMinutes < timeToMinutes(settings.day_start) ||
+        endMinutes > timeToMinutes(settings.day_end)
+    ) {
+        throw new Error('La cita queda fuera del horario disponible');
+    }
+
+    const appointmentDateTime = new Date(`${safeDate}T${safeTime}:00`);
+    const leadTimeMs = settings.lead_time_hours * 60 * 60 * 1000;
+
+    if (appointmentDateTime.getTime() - Date.now() < leadTimeMs) {
+        throw new Error(
+            `La cita debe reservarse con al menos ${settings.lead_time_hours} horas de anticipacion`
+        );
+    }
+
+    const { appointments, blocks } = await getScheduleConflicts(
+        safeDate,
+        appointmentId
+    );
+    const overlaps = [...appointments, ...blocks].some(range =>
+        rangesOverlap(startMinutes, endMinutes, range.start, range.end)
+    );
+
+    if (overlaps) {
+        throw new Error('Ese horario ya no esta disponible');
+    }
+
+    await pool.execute(
+        `
+            UPDATE appointments
+               SET client_id = ?,
+                   product_id = ?,
+                   appointment_date = ?,
+                   start_time = ?,
+                   end_time = ?,
+                   status = 'PROGRAMADA',
+                   notes = ?,
+                   cancel_reason = NULL,
+                   cancelled_at = NULL
+             WHERE id = ?
+        `,
+        [
+            clientId,
+            productId,
+            safeDate,
+            safeTime,
+            minutesToTime(endMinutes),
+            String(values.notes ?? existingAppointment.notes ?? '').trim() || null,
+            appointmentId
+        ]
+    );
+
+    const updatedAppointment = mapAppointment(
+        await getAppointmentRecord(appointmentId),
+        settings
+    );
+
+    if (!isGoogleCalendarConfigured()) {
+        return updatedAppointment;
+    }
+
+    try {
+        if (existingAppointment.google_event_id) {
+            await deleteCalendarEvent(existingAppointment.google_event_id);
+        }
+
+        const calendarEvent = await createCalendarEvent(updatedAppointment, settings);
+
+        if (!calendarEvent.skipped) {
+            await setAppointmentGoogleSync(updatedAppointment.id, {
+                google_event_id: calendarEvent.eventId,
+                google_event_html_link: calendarEvent.htmlLink,
+                google_sync_status: 'SINCRONIZADA',
+                google_sync_error: ''
+            });
+
+            return {
+                ...updatedAppointment,
+                google_event_id: calendarEvent.eventId,
+                google_event_html_link: calendarEvent.htmlLink,
+                google_calendar_url:
+                    calendarEvent.htmlLink || updatedAppointment.google_calendar_url,
+                google_sync_status: 'SINCRONIZADA',
+                google_sync_error: ''
+            };
+        }
+
+        await setAppointmentGoogleSync(updatedAppointment.id, {
+            google_event_id: '',
+            google_event_html_link: '',
+            google_sync_status: 'PENDIENTE',
+            google_sync_error: ''
+        });
+
+        return {
+            ...updatedAppointment,
+            google_event_id: '',
+            google_event_html_link: '',
+            google_sync_status: 'PENDIENTE',
+            google_sync_error: ''
+        };
+    } catch (error) {
+        await setAppointmentGoogleSync(updatedAppointment.id, {
+            google_event_id: '',
+            google_event_html_link: '',
+            google_sync_status: 'ERROR',
+            google_sync_error: error.message
+        });
+
+        return {
+            ...updatedAppointment,
+            google_event_id: '',
+            google_event_html_link: '',
+            google_sync_status: 'ERROR',
+            google_sync_error: error.message
+        };
+    }
+}
+
 async function confirmAppointment(id) {
     await ensureAppointmentsSchema();
 
@@ -660,47 +874,17 @@ async function confirmAppointment(id) {
     );
 
     const settings = await getAppointmentSettings();
-    const [rows] = await pool.execute(
-        `
-            SELECT
-                a.*,
-                c.name AS client_name,
-                c.phone AS client_phone,
-                p.name AS product_name,
-                p.duration_minutes AS product_duration_minutes
-              FROM appointments a
-              JOIN clients c ON c.id = a.client_id
-              JOIN products p ON p.id = a.product_id
-             WHERE a.id = ?
-             LIMIT 1
-        `,
-        [Number(id)]
-    );
+    const row = await getAppointmentRecord(id);
 
-    return rows.length ? mapAppointment(rows[0], settings) : null;
+    return row ? mapAppointment(row, settings) : null;
 }
 
 async function cancelAppointment(id, reason = '') {
     await ensureAppointmentsSchema();
 
-    const [existingRows] = await pool.execute(
-        `
-            SELECT
-                a.*,
-                c.name AS client_name,
-                c.phone AS client_phone,
-                p.name AS product_name,
-                p.duration_minutes AS product_duration_minutes
-              FROM appointments a
-              JOIN clients c ON c.id = a.client_id
-              JOIN products p ON p.id = a.product_id
-             WHERE a.id = ?
-             LIMIT 1
-        `,
-        [Number(id)]
-    );
+    const existingAppointment = await getAppointmentRecord(id);
 
-    if (!existingRows.length) {
+    if (!existingAppointment) {
         return null;
     }
 
@@ -716,7 +900,7 @@ async function cancelAppointment(id, reason = '') {
     );
 
     const settings = await getAppointmentSettings();
-    const appointment = mapAppointment(existingRows[0], settings);
+    const appointment = mapAppointment(existingAppointment, settings);
 
     if (appointment.google_event_id && isGoogleCalendarConfigured()) {
         try {
@@ -737,24 +921,9 @@ async function cancelAppointment(id, reason = '') {
         }
     }
 
-    const [rows] = await pool.execute(
-        `
-            SELECT
-                a.*,
-                c.name AS client_name,
-                c.phone AS client_phone,
-                p.name AS product_name,
-                p.duration_minutes AS product_duration_minutes
-              FROM appointments a
-              JOIN clients c ON c.id = a.client_id
-              JOIN products p ON p.id = a.product_id
-             WHERE a.id = ?
-             LIMIT 1
-        `,
-        [Number(id)]
-    );
+    const updatedRow = await getAppointmentRecord(id);
 
-    return rows.length ? mapAppointment(rows[0], settings) : null;
+    return updatedRow ? mapAppointment(updatedRow, settings) : null;
 }
 
 async function createAppointmentBlock({ block_date, start_time, end_time, reason = '' }) {
@@ -808,10 +977,17 @@ async function deleteAppointmentBlock(id, date) {
     return normalizeDate(date) ? listAppointmentAvailability(date) : { ok: true };
 }
 
-async function getAppointmentSummary(referenceDate = '') {
+async function getAppointmentSummary(referenceDate = '', clientId = '') {
     await ensureAppointmentsSchema();
 
     const safeDate = normalizeDate(referenceDate) || new Date().toISOString().slice(0, 10);
+    const params = [safeDate, safeDate];
+    const clientFilter = Number(clientId) > 0 ? ' AND client_id = ?' : '';
+
+    if (Number(clientId) > 0) {
+        params.push(Number(clientId));
+    }
+
     const [[stats]] = await pool.execute(
         `
             SELECT
@@ -820,18 +996,24 @@ async function getAppointmentSummary(referenceDate = '') {
                 SUM(CASE WHEN DATE(created_at) = ? AND status = 'PROGRAMADA' THEN 1 ELSE 0 END) AS created_today_count
               FROM appointments
              WHERE appointment_date >= ?
+             ${clientFilter}
         `,
-        [safeDate, safeDate]
+        params
     );
 
+    const todayParams = [safeDate];
+    if (Number(clientId) > 0) {
+        todayParams.push(Number(clientId));
+    }
     const [[today]] = await pool.execute(
         `
             SELECT COUNT(*) AS today_count
               FROM appointments
              WHERE appointment_date = ?
                AND status = 'PROGRAMADA'
+               ${Number(clientId) > 0 ? 'AND client_id = ?' : ''}
         `,
-        [safeDate]
+        todayParams
     );
 
     const [[blocks]] = await pool.execute(
@@ -858,9 +1040,11 @@ module.exports = {
     createAppointment,
     createAppointmentBlock,
     deleteAppointmentBlock,
+    getAppointmentById,
     getAppointmentSettings,
     getAppointmentSummary,
     listAppointmentAvailability,
     listAppointments,
+    updateAppointment,
     updateAppointmentSettings
 };

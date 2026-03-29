@@ -1,3 +1,5 @@
+const { requireApiRoles } = require('./authorization');
+
 function isApiAuth(req, res, next) {
     if (req.session && req.session.user) return next();
 
@@ -6,4 +8,7 @@ function isApiAuth(req, res, next) {
     });
 }
 
-module.exports = { isApiAuth };
+module.exports = {
+    isApiAuth,
+    requireApiRoles
+};

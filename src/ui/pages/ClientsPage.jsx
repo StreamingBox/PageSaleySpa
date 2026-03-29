@@ -9,6 +9,7 @@ import DataTable from '../components/DataTable';
 import DrawerForm from '../components/DrawerForm';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
+import { getSessionUser } from '../lib/navigation';
 
 const emptyClient = {
     name: '',
@@ -47,6 +48,8 @@ function sortClients(rows, sortValue) {
 }
 
 export default function ClientsPage() {
+    const sessionUser = getSessionUser();
+    const isAdmin = sessionUser.role === 'admin';
     const [searchParams, setSearchParams] = useSearchParams();
     const [draftSearch, setDraftSearch] = useState(searchParams.get('search') || '');
     const [visibleLimit, setVisibleLimit] = useState('5');
@@ -54,6 +57,7 @@ export default function ClientsPage() {
     const [form, setForm] = useState(emptyClient);
     const newMatch = useMatch('/clients/new');
     const editMatch = useMatch('/clients/:hash/edit');
+    const selfEditMatch = useMatch('/profile/edit');
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
@@ -61,13 +65,17 @@ export default function ClientsPage() {
 
     const listQuery = useQuery({
         queryKey: ['clients', location.search],
+        enabled: isAdmin,
         queryFn: () => apiFetch(`/api/clients${location.search}`)
     });
 
     const editQuery = useQuery({
-        queryKey: ['client', editMatch?.params.hash],
-        enabled: Boolean(editMatch?.params.hash),
-        queryFn: () => apiFetch(`/api/clients/${editMatch.params.hash}`)
+        queryKey: ['client-edit', editMatch?.params.hash, selfEditMatch ? 'self' : 'admin'],
+        enabled: Boolean(editMatch?.params.hash) || Boolean(selfEditMatch),
+        queryFn: () =>
+            selfEditMatch
+                ? apiFetch('/api/me/client')
+                : apiFetch(`/api/clients/${editMatch.params.hash}`)
     });
 
     useEffect(() => {
@@ -75,7 +83,7 @@ export default function ClientsPage() {
     }, [searchParams]);
 
     useEffect(() => {
-        if (newMatch) {
+        if (newMatch && isAdmin) {
             setForm(emptyClient);
             return;
         }
@@ -102,14 +110,20 @@ export default function ClientsPage() {
 
     const saveMutation = useMutation({
         mutationFn: values =>
-            apiFetch(editMatch ? `/api/clients/${editMatch.params.hash}` : '/api/clients', {
-                method: editMatch ? 'PUT' : 'POST',
+            apiFetch(selfEditMatch ? '/api/me/client' : editMatch ? `/api/clients/${editMatch.params.hash}` : '/api/clients', {
+                method: selfEditMatch || editMatch ? 'PUT' : 'POST',
                 body: values
             }),
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['clients'] });
-            showToast(editMatch ? 'Cliente actualizado' : 'Cliente creado', 'success');
-            navigate(`/clients${location.search}`);
+            await queryClient.invalidateQueries({ queryKey: ['client-edit'] });
+            await queryClient.invalidateQueries({ queryKey: ['my-client'] });
+            await queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+            if (selfEditMatch && window.__APP_STATE__?.user) {
+                window.__APP_STATE__.user.username = form.name;
+            }
+            showToast(selfEditMatch || editMatch ? 'Datos actualizados' : 'Cliente creado', 'success');
+            navigate(selfEditMatch ? '/profile' : `/clients${location.search}`);
         },
         onError: error => {
             showToast(error.message, 'danger');
@@ -207,7 +221,81 @@ export default function ClientsPage() {
         setSearchParams(draftSearch ? { search: draftSearch } : {});
     };
 
-    const isDrawerOpen = Boolean(newMatch || editMatch);
+    const isDrawerOpen = Boolean((isAdmin && (newMatch || editMatch)) || selfEditMatch);
+
+    if (!isAdmin && selfEditMatch) {
+        return (
+            <div className="page-stack">
+                <DrawerForm
+                    open
+                    title="Editar perfil"
+                    description="Actualiza tus datos personales."
+                    placement="centered"
+                    onClose={() => navigate('/profile')}
+                >
+                    <form
+                        className="stack-form"
+                        onSubmit={event => {
+                            event.preventDefault();
+                            saveMutation.mutate(form);
+                        }}
+                    >
+                        <label className="field">
+                            <span>Nombre</span>
+                            <input
+                                required
+                                value={form.name}
+                                onChange={event =>
+                                    setForm(current => ({ ...current, name: event.target.value }))
+                                }
+                            />
+                        </label>
+
+                        <label className="field">
+                            <span>Telefono</span>
+                            <input
+                                value={form.phone}
+                                onChange={event =>
+                                    setForm(current => ({ ...current, phone: event.target.value }))
+                                }
+                            />
+                        </label>
+
+                        <label className="field">
+                            <span>Direccion</span>
+                            <input
+                                value={form.address}
+                                onChange={event =>
+                                    setForm(current => ({ ...current, address: event.target.value }))
+                                }
+                            />
+                        </label>
+
+                        <label className="field">
+                            <span>Complemento</span>
+                            <input
+                                value={form.complemento}
+                                onChange={event =>
+                                    setForm(current => ({
+                                        ...current,
+                                        complemento: event.target.value
+                                    }))
+                                }
+                            />
+                        </label>
+
+                        <button
+                            className="button button--primary"
+                            disabled={saveMutation.isPending}
+                            type="submit"
+                        >
+                            {saveMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                        </button>
+                    </form>
+                </DrawerForm>
+            </div>
+        );
+    }
 
     return (
         <div className="page-stack">
@@ -224,30 +312,34 @@ export default function ClientsPage() {
                     </button>
                 </form>
 
-                <button
-                    className="button button--primary"
-                    onClick={() => navigate('/clients/new')}
-                    type="button"
-                >
-                    <Plus size={16} />
-                    Nuevo cliente
-                </button>
+                {isAdmin ? (
+                    <button
+                        className="button button--primary"
+                        onClick={() => navigate('/clients/new')}
+                        type="button"
+                    >
+                        <Plus size={16} />
+                        Nuevo cliente
+                    </button>
+                ) : null}
             </section>
 
-            <CollectionToolbar
-                summary={`${visibleClients.length} de ${sortedClients.length} clientes visibles`}
-                helperText="Top y ordenamiento activo para todo el listado."
-                sortValue={sortValue}
-                onSortChange={setSortValue}
-                sortOptions={[
-                    { value: 'name-asc', label: 'Nombre A-Z' },
-                    { value: 'name-desc', label: 'Nombre Z-A' },
-                    { value: 'phone-asc', label: 'Telefono 0-9' },
-                    { value: 'phone-desc', label: 'Telefono 9-0' }
-                ]}
-                limitValue={visibleLimit}
-                onLimitChange={setVisibleLimit}
-            />
+            {isAdmin ? (
+                <CollectionToolbar
+                    summary={`${visibleClients.length} de ${sortedClients.length} clientes visibles`}
+                    helperText="Top y ordenamiento activo para todo el listado."
+                    sortValue={sortValue}
+                    onSortChange={setSortValue}
+                    sortOptions={[
+                        { value: 'name-asc', label: 'Nombre A-Z' },
+                        { value: 'name-desc', label: 'Nombre Z-A' },
+                        { value: 'phone-asc', label: 'Telefono 0-9' },
+                        { value: 'phone-desc', label: 'Telefono 9-0' }
+                    ]}
+                    limitValue={visibleLimit}
+                    onLimitChange={setVisibleLimit}
+                />
+            ) : null}
 
             {listQuery.isLoading ? (
                 <section className="panel">
