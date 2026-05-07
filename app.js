@@ -147,12 +147,20 @@ app.use(methodOverride('_method'));
 // --- Health check para CI/webServer readiness ---
 app.get('/health', (_req, res) => res.status(200).send('ok'));
 
-// --- Archivos estaticos con cache headers optimizados ---
+// --- Archivos estaticos con cache conservadora ---
 app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: '1d',
     setHeaders: (res, filePath) => {
-        if (filePath.includes('/app/') || filePath.includes('/brand/')) {
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        if (filePath.includes(`${path.sep}app${path.sep}`)) {
+            // Los bundles tienen nombres estables, asi que no deben servirse como immutable.
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            return;
+        }
+
+        if (filePath.includes(`${path.sep}brand${path.sep}`)) {
+            res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
         }
     }
 }));
