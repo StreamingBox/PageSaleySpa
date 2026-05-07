@@ -18,7 +18,7 @@ import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import { getSessionUser } from '../lib/navigation';
 
-const avatarChoices = ['ðŸŒ¸', 'ðŸ’†', 'ðŸª·', 'âœ¨', 'ðŸ§´', 'ðŸ’–', 'ðŸŒ¿', 'ðŸ•¯ï¸', 'ðŸŽ€', 'ðŸŒº', 'ðŸ«§', 'ðŸ’…'];
+const avatarChoices = ['🌸', '💆', '🪷', '✨', '🧴', '💖', '🌿', '🕯️', '🎀', '🌺', '🫧', '💅'];
 
 function getInitials(name) {
     return String(name || '')
@@ -104,7 +104,7 @@ export default function ClientProfilePage() {
         return (
             <EmptyState
                 title="Cliente no encontrado"
-                description="No encontre informacion disponible para este perfil."
+                description="No encontré información disponible para este perfil."
                 action={
                     <Link className="button button--primary" to={isAdmin ? '/clients' : '/appointments'}>
                         {isAdmin ? 'Volver a clientes' : 'Volver a citas'}
@@ -124,15 +124,15 @@ export default function ClientProfilePage() {
         },
         {
             icon: Phone,
-            title: 'Informacion de contacto',
-            subtitle: client.phone || 'Sin telÃ©fono registrado',
+            title: 'Información de contacto',
+            subtitle: client.phone || 'Sin teléfono registrado',
             onClick: () =>
                 document.getElementById('profile-contact')?.scrollIntoView({ behavior: 'smooth' })
         },
         {
             icon: MapPin,
-            title: 'DirecciÃ³n',
-            subtitle: client.address || 'Sin direcciÃ³n registrada',
+            title: 'Dirección',
+            subtitle: client.address || 'Sin dirección registrada',
             onClick: () =>
                 document.getElementById('profile-address')?.scrollIntoView({ behavior: 'smooth' })
         },
@@ -231,7 +231,7 @@ export default function ClientProfilePage() {
                                     <strong>{item.title}</strong>
                                     <small>{item.subtitle}</small>
                                 </span>
-                                <span className="profile-action-card__arrow">â€º</span>
+                                <span className="profile-action-card__arrow">›</span>
                             </button>
                         );
                     })}
@@ -268,7 +268,7 @@ export default function ClientProfilePage() {
                 </article>
 
                 <article className="kpi-card kpi-card--cyan">
-                    <span className="kpi-card__label">Ultima compra</span>
+                    <span className="kpi-card__label">Última compra</span>
                     <strong className="kpi-card__value">
                         {summary.last_sale_at ? formatDate(summary.last_sale_at) : 'Sin ventas'}
                     </strong>
@@ -281,20 +281,20 @@ export default function ClientProfilePage() {
                     <div className="panel__header">
                         <div>
                             <p className="panel__eyebrow">Cliente</p>
-                            <h3>Informacion de contacto</h3>
+                            <h3>Información de contacto</h3>
                         </div>
                     </div>
 
                     <div className="client-detail__grid">
                         <article className="client-detail__item">
-                            <span className="client-detail__label">TelÃ©fono</span>
+                            <span className="client-detail__label">Teléfono</span>
                             <strong className="client-detail__value">
-                                {client.phone || 'Sin telÃ©fono'}
+                                {client.phone || 'Sin teléfono'}
                             </strong>
                         </article>
 
                         <article className="client-detail__item">
-                            <span className="client-detail__label">Ultima cuenta de cobro</span>
+                            <span className="client-detail__label">Última cuenta de cobro</span>
                             <strong className="client-detail__value">
                                 {summary.last_invoice_at
                                     ? formatDate(summary.last_invoice_at)
@@ -306,9 +306,9 @@ export default function ClientProfilePage() {
                             className="client-detail__item client-detail__item--full"
                             id="profile-address"
                         >
-                            <span className="client-detail__label">DirecciÃ³n</span>
+                            <span className="client-detail__label">Dirección</span>
                             <strong className="client-detail__value">
-                                {client.address || 'Sin direcciÃ³n registrada'}
+                                {client.address || 'Sin dirección registrada'}
                             </strong>
                         </article>
 
@@ -403,7 +403,7 @@ export default function ClientProfilePage() {
                             </div>
                         ) : (
                             <p className="metric-empty">
-                                Todavia no hay cuentas de cobro registradas para este cliente.
+                                Todavía no hay cuentas de cobro registradas para este cliente.
                             </p>
                         )}
                     </section>
@@ -426,7 +426,7 @@ export default function ClientProfilePage() {
                                     <div>
                                         <strong>{sale.product_name}</strong>
                                         <small>
-                                            {formatDate(sale.sold_at)} Â· {sale.quantity} unidad
+                                            {formatDate(sale.sold_at)} · {sale.quantity} unidad
                                             {sale.quantity === 1 ? '' : 'es'}
                                         </small>
                                     </div>
@@ -455,7 +455,7 @@ export default function ClientProfilePage() {
                     ) : (
                         <EmptyState
                             title="Sin historial de compras"
-                            description="Este cliente todavia no tiene ventas activas registradas."
+                            description="Este cliente todavía no tiene ventas activas registradas."
                         />
                     )}
                 </section>

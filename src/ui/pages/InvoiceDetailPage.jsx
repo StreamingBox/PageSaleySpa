@@ -118,10 +118,10 @@ export default function InvoiceDetailPage() {
                         {invoice.client_name}
                     </strong>
                     <span className="kpi-card__note">
-                        {invoice.client_phone || 'Sin telÃ©fono'} Â·{' '}
+                        {invoice.client_phone || 'Sin teléfono'} ·{' '}
                         {[invoice.client_address, invoice.client_complemento]
                             .filter(Boolean)
-                            .join(' Â· ') || 'Sin direcciÃ³n registrada'}
+                            .join(' · ') || 'Sin dirección registrada'}
                     </span>
                 </article>
 
@@ -136,8 +136,8 @@ export default function InvoiceDetailPage() {
                     </strong>
                     <span className="kpi-card__note">
                         {invoice.status === 'PAGADA'
-                            ? `${invoice.payment_source} Â· ${formatDate(invoice.paid_at)}`
-                            : 'AÃºn pendiente por cobrar'}
+                            ? `${invoice.payment_source} · ${formatDate(invoice.paid_at)}`
+                            : 'Aún pendiente por cobrar'}
                     </span>
                 </article>
 
@@ -147,7 +147,7 @@ export default function InvoiceDetailPage() {
                         {formatMoney(invoice.total)}
                     </strong>
                     <span className="kpi-card__note">
-                        {invoice.items.length} lÃ­neas registradas
+                        {invoice.items.length} líneas registradas
                     </span>
                 </article>
             </section>
@@ -186,8 +186,8 @@ export default function InvoiceDetailPage() {
                         rowKey="id"
                         empty={
                             <EmptyState
-                                title="Sin lÃ­neas"
-                                description="Esta cuenta de cobro no tiene lÃ­neas registradas."
+                                title="Sin líneas"
+                                description="Esta cuenta de cobro no tiene líneas registradas."
                             />
                         }
                     />
@@ -225,7 +225,7 @@ export default function InvoiceDetailPage() {
                                 <Wallet size={18} />
                                 <div>
                                     <strong>Marcar como pagada</strong>
-                                    <span>Esto actualizarÃ¡ tambiÃ©n las ventas incluidas.</span>
+                                    <span>Esto actualizará también las ventas incluidas.</span>
                                 </div>
                             </div>
 
@@ -263,7 +263,7 @@ export default function InvoiceDetailPage() {
                     )}
 
                     <p className="summary-note">
-                        La numeraciÃ³n es consecutiva y el PDF permanece disponible para consulta en cualquier momento.
+                        La numeración es consecutiva y el PDF permanece disponible para consulta en cualquier momento.
                     </p>
                 </aside>
             </section>

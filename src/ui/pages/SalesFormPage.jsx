@@ -133,10 +133,10 @@ export default function SalesFormPage() {
 
     const validate = () => {
         const nextErrors = {};
-        if (!form.client_id) nextErrors.client_id = 'SelecciÃ³na un cliente';
-        if (!form.product_id) nextErrors.product_id = 'SelecciÃ³na un producto';
-        if (!form.quantity || Number(form.quantity) <= 0) nextErrors.quantity = 'Ingresa una cantidad vÃ¡lida';
-        if (!form.sold_at) nextErrors.sold_at = 'SelecciÃ³na una fecha';
+        if (!form.client_id) nextErrors.client_id = 'Selecciona un cliente';
+        if (!form.product_id) nextErrors.product_id = 'Selecciona un producto';
+        if (!form.quantity || Number(form.quantity) <= 0) nextErrors.quantity = 'Ingresa una cantidad válida';
+        if (!form.sold_at) nextErrors.sold_at = 'Selecciona una fecha';
         if (
             form.sold_at &&
             !isSaleDateWithinWindow(form.sold_at, saleDateMin, saleDateMax)
@@ -146,7 +146,7 @@ export default function SalesFormPage() {
             )} y ${formatDate(saleDateMax)}`;
         }
         if (form.paid === '1' && !form.payment_source) {
-            nextErrors.payment_source = 'SelecciÃ³na un origen de pago';
+            nextErrors.payment_source = 'Selecciona un origen de pago';
         }
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
@@ -210,9 +210,9 @@ export default function SalesFormPage() {
                             <SearchableSelect
                                 value={form.client_id}
                                 options={clientOptions}
-                                placeholder="SelecciÃ³na un cliente"
-                                searchPlaceholder="Busca por nombre, telÃ©fono o direcciÃ³n"
-                                emptyMessage="No encontrÃ© clientes con ese filtro."
+                                placeholder="Selecciona un cliente"
+                                searchPlaceholder="Busca por nombre, teléfono o dirección"
+                                emptyMessage="No encontré clientes con ese filtro."
                                 disabled={isLocked}
                                 onChange={nextValue =>
                                     setForm(current => ({
@@ -234,16 +234,16 @@ export default function SalesFormPage() {
                             <SearchableSelect
                                 value={form.product_id}
                                 options={productOptions}
-                                placeholder="SelecciÃ³na un producto"
+                                placeholder="Selecciona un producto"
                                 searchPlaceholder="Busca por nombre del producto"
-                                emptyMessage="No encontrÃ© productos con ese filtro."
+                                emptyMessage="No encontré productos con ese filtro."
                                 disabled={isLocked}
                                 onChange={setProduct}
                             />
                             <small className="field__hint">
                                 {selectedProduct
                                     ? `Producto actual: ${selectedProduct.name}`
-                                    : 'Toca el campo y busca dentro del catÃ¡logo'}
+                                    : 'Toca el campo y busca dentro del catálogo'}
                             </small>
                             {errors.product_id ? <small className="field__error">{errors.product_id}</small> : null}
                         </label>
@@ -321,7 +321,7 @@ export default function SalesFormPage() {
                                     }))
                                 }
                             >
-                                <option value="">SelecciÃ³na origen</option>
+                                <option value="">Selecciona origen</option>
                                 <option value="EFECTIVO">Efectivo</option>
                                 <option value="NEQUI">Nequi</option>
                                 <option value="DAVIPLATA">Daviplata</option>
@@ -361,7 +361,7 @@ export default function SalesFormPage() {
                         </div>
                     </div>
                     <p className="summary-note">
-                        El total se recalcula automÃ¡ticamente para evitar inconsistencias entre catÃ¡logo y venta.
+                        El total se recalcula automáticamente para evitar inconsistencias entre catálogo y venta.
                     </p>
                 </aside>
             </section>
