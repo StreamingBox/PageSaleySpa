@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+�import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Plus, Search } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -171,7 +171,7 @@ export default function InvoicesPage() {
             setSelectedInvoiceIds([]);
             setMergeDialogOpen(false);
             showToast(
-                `Cuenta de cobro ${mergedInvoice.invoice_number} actualizada con las lÃ­neas unificadas`,
+                `Cuenta de cobro ${mergedInvoice.invoice_number} actualizada con las líneas unificadas`,
                 'success'
             );
             navigate(`/invoices/${mergedInvoice.public_id}`);
@@ -218,7 +218,7 @@ export default function InvoicesPage() {
             key: 'select',
             label: (
                 <input
-                    aria-label="SelecciÃ³nar cuentas de cobro visibles"
+                    aria-label="Selecciónar cuentas de cobro visibles"
                     checked={allVisibleSelected}
                     onChange={toggleVisibleSelection}
                     type="checkbox"
@@ -226,7 +226,7 @@ export default function InvoicesPage() {
             ),
             render: row => (
                 <input
-                    aria-label={`SelecciÃ³nar ${row.invoice_number}`}
+                    aria-label={`Selecciónar ${row.invoice_number}`}
                     checked={selectedInvoiceIds.includes(row.id)}
                     disabled={row.status !== 'PENDIENTE'}
                     onChange={() => toggleInvoiceSelection(row.id)}
@@ -235,7 +235,7 @@ export default function InvoicesPage() {
             )
         },
         { key: 'invoice_number', label: 'Cuenta de cobro' },
-        { key: 'issue_date', label: 'EmisiÃ³n', render: row => formatDate(row.issue_date) },
+        { key: 'issue_date', label: 'Emisión', render: row => formatDate(row.issue_date) },
         { key: 'client_name', label: 'Cliente' },
         { key: 'lines_count', label: 'Items', align: 'right' },
         { key: 'total', label: 'Total', render: row => formatMoney(row.total) },
@@ -259,7 +259,7 @@ export default function InvoicesPage() {
         },
         {
             key: 'actions',
-            label: 'AcciÃ³nes',
+            label: 'Acciónes',
             align: 'right',
             render: row => (
                 <div className="table-action-group">
@@ -291,7 +291,7 @@ export default function InvoicesPage() {
                     <div className="search-bar">
                         <Search size={16} />
                         <input
-                            placeholder="Buscar por nÃºmero o cliente"
+                            placeholder="Buscar por número o cliente"
                             value={draft.search}
                             onChange={event =>
                                 setDraft(current => ({ ...current, search: event.target.value }))
@@ -352,8 +352,8 @@ export default function InvoicesPage() {
                             value={draft.client_id}
                             options={clientOptions}
                             placeholder="Todos los clientes"
-                            searchPlaceholder="Busca por nombre o telÃ©fono"
-                            emptyMessage="No encontrÃ© clientes con ese filtro."
+                            searchPlaceholder="Busca por nombre o teléfono"
+                            emptyMessage="No encontré clientes con ese filtro."
                             onChange={nextValue =>
                                 setDraft(current => ({ ...current, client_id: nextValue }))
                             }
@@ -367,7 +367,7 @@ export default function InvoicesPage() {
                             options={statusOptions}
                             placeholder="Todos"
                             searchPlaceholder="Busca un estado"
-                            emptyMessage="No encontrÃ© estados con ese filtro."
+                            emptyMessage="No encontré estados con ese filtro."
                             onChange={nextValue =>
                                 setDraft(current => ({ ...current, status: nextValue }))
                             }
@@ -382,10 +382,10 @@ export default function InvoicesPage() {
                 sortValue={sortValue}
                 onSortChange={setSortValue}
                 sortOptions={[
-                    { value: 'date-desc', label: 'Fecha mÃ¡s reciente' },
-                    { value: 'date-asc', label: 'Fecha mÃ¡s antigua' },
-                    { value: 'number-desc', label: 'NÃºmero mayor a menor' },
-                    { value: 'number-asc', label: 'NÃºmero menor a mayor' },
+                    { value: 'date-desc', label: 'Fecha más reciente' },
+                    { value: 'date-asc', label: 'Fecha más antigua' },
+                    { value: 'number-desc', label: 'Número mayor a menor' },
+                    { value: 'number-asc', label: 'Número menor a mayor' },
                     { value: 'total-desc', label: 'Total mayor a menor' },
                     { value: 'total-asc', label: 'Total menor a mayor' },
                     { value: 'client-asc', label: 'Cliente A-Z' },
@@ -398,11 +398,11 @@ export default function InvoicesPage() {
             {selectedInvoices.length ? (
                 <section className="range-banner">
                     <div>
-                        <strong>{selectedInvoices.length} cuentas de cobro selecciÃ³nadas</strong>
+                        <strong>{selectedInvoices.length} cuentas de cobro selecciónadas</strong>
                         <p className="summary-note">
                             {selectedClientIds.length > 1
-                                ? 'La selecciÃ³n actual mezcla clientes distintos. Elige solo cuentas de cobro del mismo cliente.'
-                                : `Se conservarÃ¡ ${primaryInvoice?.invoice_number} y se moverÃ¡n allÃ­ las lÃ­neas de las demÃ¡s cuentas de cobro pendientes selecciÃ³nadas.`}
+                                ? 'La selección actual mezcla clientes distintos. Elige solo cuentas de cobro del mismo cliente.'
+                                : `Se conservará ${primaryInvoice?.invoice_number} y se moverán allí las líneas de las demás cuentas de cobro pendientes selecciónadas.`}
                         </p>
                     </div>
 
@@ -412,7 +412,7 @@ export default function InvoicesPage() {
                             onClick={() => setSelectedInvoiceIds([])}
                             type="button"
                         >
-                            Limpiar selecciÃ³n
+                            Limpiar selección
                         </button>
                         <button
                             className="button button--primary"
@@ -441,7 +441,7 @@ export default function InvoicesPage() {
                     rowKey="id"
                     empty={
                         <EmptyState
-                            title="TodavÃ­a no hay cuentas de cobro"
+                            title="Todavía no hay cuentas de cobro"
                             description="Crea la primera cuenta de cobro PDF para consultar, descargar y marcar pagos."
                             action={
                                 <Link className="button button--primary" to="/invoices/new">
@@ -455,18 +455,18 @@ export default function InvoicesPage() {
 
             <ConfirmDialog
                 open={mergeDialogOpen}
-                title="Unificar cuentas de cobro selecciÃ³nadas"
+                title="Unificar cuentas de cobro selecciónadas"
                 description={
                     selectedInvoices.length < 2
-                        ? 'SelecciÃ³na al menos dos cuentas de cobro pendientes del mismo cliente.'
+                        ? 'Seleccióna al menos dos cuentas de cobro pendientes del mismo cliente.'
                         : selectedClientIds.length > 1
                             ? 'No puedes Unificar cuentas de cobro de clientes distintos.'
-                        : `Se conservarÃ¡ ${primaryInvoice?.invoice_number} y se eliminarÃ¡n ${selectedInvoices
+                        : `Se conservará ${primaryInvoice?.invoice_number} y se eliminarán ${selectedInvoices
                               .slice(1)
                               .map(invoice => invoice.invoice_number)
-                              .join(', ')} despuÃ©s de mover sus lÃ­neas a la cuenta de cobro principal.`
+                              .join(', ')} después de mover sus líneas a la cuenta de cobro principal.`
                 }
-                confirmLabel={mergeMutation.isPending ? 'Unificando...' : 'SÃ­, unificar'}
+                confirmLabel={mergeMutation.isPending ? 'Unificando...' : 'Sí, unificar'}
                 onCancel={() => setMergeDialogOpen(false)}
                 onConfirm={() => mergeMutation.mutate(selectedInvoiceIds)}
                 tone="primary"

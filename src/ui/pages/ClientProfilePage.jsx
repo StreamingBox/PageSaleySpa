@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+�import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -18,7 +18,7 @@ import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import { getSessionUser } from '../lib/navigation';
 
-const avatarChoices = ['ðŸŒ¸', 'ðŸ’†', 'ðŸª·', 'âœ¨', 'ðŸ§´', 'ðŸ’–', 'ðŸŒ¿', 'ðŸ•¯ï¸', 'ðŸŽ€', 'ðŸŒº', 'ðŸ«§', 'ðŸ’…'];
+const avatarChoices = ['�xR�', '�x ', '�x��', '�S�', '�x��', '�x', '�xR�', '�x"�️', '�x}�', '�xR�', '�x��', '�x&'];
 
 function getInitials(name) {
     return String(name || '')
@@ -125,14 +125,14 @@ export default function ClientProfilePage() {
         {
             icon: Phone,
             title: 'Informacion de contacto',
-            subtitle: client.phone || 'Sin telÃ©fono registrado',
+            subtitle: client.phone || 'Sin teléfono registrado',
             onClick: () =>
                 document.getElementById('profile-contact')?.scrollIntoView({ behavior: 'smooth' })
         },
         {
             icon: MapPin,
-            title: 'DirecciÃ³n',
-            subtitle: client.address || 'Sin direcciÃ³n registrada',
+            title: 'Dirección',
+            subtitle: client.address || 'Sin dirección registrada',
             onClick: () =>
                 document.getElementById('profile-address')?.scrollIntoView({ behavior: 'smooth' })
         },
@@ -231,7 +231,7 @@ export default function ClientProfilePage() {
                                     <strong>{item.title}</strong>
                                     <small>{item.subtitle}</small>
                                 </span>
-                                <span className="profile-action-card__arrow">â€º</span>
+                                <span className="profile-action-card__arrow">⬺</span>
                             </button>
                         );
                     })}
@@ -287,9 +287,9 @@ export default function ClientProfilePage() {
 
                     <div className="client-detail__grid">
                         <article className="client-detail__item">
-                            <span className="client-detail__label">TelÃ©fono</span>
+                            <span className="client-detail__label">Teléfono</span>
                             <strong className="client-detail__value">
-                                {client.phone || 'Sin telÃ©fono'}
+                                {client.phone || 'Sin teléfono'}
                             </strong>
                         </article>
 
@@ -306,9 +306,9 @@ export default function ClientProfilePage() {
                             className="client-detail__item client-detail__item--full"
                             id="profile-address"
                         >
-                            <span className="client-detail__label">DirecciÃ³n</span>
+                            <span className="client-detail__label">Dirección</span>
                             <strong className="client-detail__value">
-                                {client.address || 'Sin direcciÃ³n registrada'}
+                                {client.address || 'Sin dirección registrada'}
                             </strong>
                         </article>
 
@@ -426,7 +426,7 @@ export default function ClientProfilePage() {
                                     <div>
                                         <strong>{sale.product_name}</strong>
                                         <small>
-                                            {formatDate(sale.sold_at)} Â· {sale.quantity} unidad
+                                            {formatDate(sale.sold_at)} · {sale.quantity} unidad
                                             {sale.quantity === 1 ? '' : 'es'}
                                         </small>
                                     </div>
