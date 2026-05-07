@@ -111,13 +111,13 @@ function drawBrand(doc) {
         .fillColor(palette.inkSoft)
         .font('Helvetica')
         .fontSize(9)
-        .text('Factura interna de control comercial', brandX, brandY + brandBoxHeight + 8, {
+        .text('Cuenta de cobro interna de control comercial', brandX, brandY + brandBoxHeight + 8, {
             width: brandBoxWidth
         });
 }
 
 function drawInvoiceMeta(doc, invoice) {
-    doc.fillColor(palette.inkSoft).font('Helvetica-Bold').fontSize(10).text('FACTURA', layout.pageWidth - layout.right - 140, 50, { width: 140, align: 'right' });
+    doc.fillColor(palette.inkSoft).font('Helvetica-Bold').fontSize(10).text('CUENTA DE COBRO', layout.pageWidth - layout.right - 160, 50, { width: 160, align: 'right' });
     doc.fillColor(palette.ink).font('Helvetica-Bold').fontSize(28).text(invoice.invoice_number, layout.pageWidth - layout.right - 180, 64, { width: 180, align: 'right' });
     drawStatusBadge(doc, invoice.status, layout.pageWidth - layout.right - 102, 96);
     doc.moveTo(layout.left, 136).lineTo(layout.pageWidth - layout.right, 136).strokeColor(palette.border).lineWidth(1).stroke();

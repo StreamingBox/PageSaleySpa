@@ -238,7 +238,7 @@ textarea {
 }
 
 .sidebar__brand {
-    padding: 16px 0;
+    padding: 12px 0 18px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -247,22 +247,25 @@ textarea {
 }
 
 .sidebar__brand-logo {
-    width: 160px;
+    width: min(100%, 220px);
     max-width: 100%;
-    height: 52px;
+    height: 72px;
     object-fit: contain;
-    object-position: left center;
+    object-position: center;
     display: block;
-    filter: drop-shadow(0 2px 6px rgba(167, 119, 207, 0.14));
+    filter: drop-shadow(0 6px 14px rgba(167, 119, 207, 0.18));
+    transform: scale(1.5);
+    transform-origin: center;
 }
 
 .topbar__logo {
-    height: 42px;
-    width: 148px;
+    height: 56px;
+    width: min(220px, 48vw);
     object-fit: contain;
     object-position: center;
     margin: 0;
-    transform: none;
+    transform: scale(1.6);
+    transform-origin: center;
     flex: 0 0 auto;
 }
 
@@ -336,6 +339,26 @@ html[data-theme='dark'] .sidebar__link--active {
 
 .sidebar__logout {
     margin-top: auto;
+}
+
+.sidebar__logout-form {
+    margin-top: auto;
+}
+
+.sidebar__logout-form .sidebar__logout {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 14px;
+    color: var(--muted);
+    transition: var(--transition);
 }
 
 .sidebar__backdrop,
@@ -1850,15 +1873,16 @@ html[data-theme='dark'] .data-table--clients tbody tr:hover {
         display: grid;
     }
 
-    .editor-grid,
+    .editor-grid {
+        grid-template-columns: 1fr;
+    }
+
     .hero,
     .filter-bar,
     .collection-toolbar,
     .panel__header,
     .range-banner,
-    .page-actions,
-    .topbar {
-        grid-template-columns: 1fr;
+    .page-actions {
         flex-direction: column;
         align-items: stretch;
     }
@@ -2795,17 +2819,18 @@ html[data-theme='dark'] .sidebar__brand-logo {
     }
 
     .topbar__logo {
-        width: min(180px, 52vw);
-        height: 52px;
+        width: min(210px, 58vw);
+        height: 60px;
         align-self: center;
-        transform: scale(1.18);
+        transform: scale(2);
         transform-origin: center;
         margin-top: 0;
         margin-bottom: 0;
     }
 
     .topbar__mobile-logo {
-        height: 28px;
+        width: min(210px, 58vw);
+        height: 60px;
     }
 
     .kpi-grid {
@@ -3171,3 +3196,102 @@ html[data-theme='dark'] .kpi-card:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* ================================================================
+   Fixes responsive adicionales
+   ================================================================ */
+@media (max-width: 720px) {
+    .analytics-summary-card {
+        min-height: auto;
+    }
+
+    .analytics-month-card strong,
+    .analytics-summary-card strong {
+        font-size: clamp(1.3rem, 5vw, 2rem);
+    }
+
+    .invoice-candidate-card__amount,
+    .invoice-candidate-card__check {
+        justify-self: start;
+    }
+
+    .analytics-hero {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .analytics-hero__actions {
+        justify-content: flex-start;
+    }
+
+    .topbar__logo {
+        width: min(180px, 52vw);
+        height: 52px;
+        transform: scale(1.55);
+    }
+
+    .topbar__mobile-logo {
+        width: min(180px, 52vw);
+        height: 52px;
+    }
+}
+
+@media (max-width: 480px) {
+    .kpi-card__value {
+        font-size: clamp(1.2rem, 6vw, 1.8rem);
+    }
+
+    .data-table table {
+        min-width: 420px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 12px 10px;
+        font-size: 13px;
+    }
+
+    .profile-hero__avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-hero__avatar span {
+        width: 76px;
+        height: 76px;
+        font-size: 1.3rem;
+    }
+
+    .drawer__panel {
+        width: 100%;
+    }
+
+    .drawer__panel--centered {
+        width: calc(100% - 16px);
+        max-height: calc(100% - 16px);
+    }
+
+    .drawer__header {
+        padding: 16px;
+    }
+
+    .drawer__body {
+        padding: 16px;
+    }
+
+    .panel,
+    .hero {
+        padding: 16px;
+    }
+
+    .metrics-segments__button {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .appointment-slot {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+

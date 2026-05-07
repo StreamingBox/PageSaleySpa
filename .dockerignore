@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.git/
+.env
+test-results/
+playwright-report/
+coverage/
+android/
+*.md
+.DS_Store

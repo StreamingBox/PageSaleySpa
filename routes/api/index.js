@@ -1,8 +1,10 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const slugify = require('slugify');
 const { subDays } = require('date-fns');
+const { fileTypeFromFile } = require('file-type');
 const { asyncHandler } = require('../../utils/asyncHandler');
 const { sendData, sendError } = require('../../utils/apiResponse');
 const { isApiAuth, requireApiRoles } = require('../../middleware/apiAuth');
@@ -87,6 +89,25 @@ const allowedMimeTypes = new Set([
     'image/webp'
 ]);
 
+const ALLOWED_EXTENSIONS = new Set([
+    '.pdf', '.xls', '.xlsx', '.doc', '.docx',
+    '.jpg', '.jpeg', '.png', '.webp'
+]);
+
+async function verifyFileType(filePath) {
+    try {
+        const result = await fileTypeFromFile(filePath);
+        if (!result || !allowedMimeTypes.has(result.mime)) {
+            try { fs.unlinkSync(filePath); } catch (_e) {}
+            return false;
+        }
+        return true;
+    } catch (_err) {
+        try { fs.unlinkSync(filePath); } catch (_e) {}
+        return false;
+    }
+}
+
 const storage = multer.diskStorage({
     destination: uploadsDir,
     filename: (_req, file, cb) => {
@@ -105,12 +126,14 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024
     },
     fileFilter: (_req, file, cb) => {
-        if (allowedMimeTypes.has(file.mimetype)) {
-            cb(null, true);
+        const ext = path.extname(file.originalname).toLowerCase();
+
+        if (!ALLOWED_EXTENSIONS.has(ext)) {
+            cb(new Error('Tipo de archivo no permitido'));
             return;
         }
 
-        cb(new Error('Tipo de archivo no permitido'));
+        cb(null, true);
     }
 });
 
@@ -129,7 +152,7 @@ function validateSaleDate(soldAt) {
     const parsedSaleDate = parseIsoDate(soldAt);
 
     if (!parsedSaleDate) {
-        return 'La fecha de venta no es válida';
+        return 'La fecha de venta no es valida';
     }
 
     const today = parseIsoDate(toIsoDate(new Date()));
@@ -560,7 +583,7 @@ router.get(
     requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const category = await getCategoryById(req.params.id);
-        if (!category) return sendError(res, 404, 'Categoría no encontrada');
+        if (!category) return sendError(res, 404, 'Categoria no encontrada');
 
         sendData(res, category);
     })
@@ -594,7 +617,7 @@ router.put(
             name: String(name).trim()
         });
 
-        if (!category) return sendError(res, 404, 'Categoría no encontrada');
+        if (!category) return sendError(res, 404, 'Categoria no encontrada');
         sendData(res, category);
     })
 );
@@ -692,10 +715,10 @@ router.get(
     requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const invoice = await getInvoiceById(req.params.publicId);
-        if (!invoice) return sendError(res, 404, 'Factura no encontrada');
+        if (!invoice) return sendError(res, 404, 'Cuenta de cobro no encontrada');
 
         const download = req.query.download === '1';
-        const safeFileName = `${invoice.invoice_number || 'factura'}.pdf`;
+        const safeFileName = `${invoice.invoice_number || 'cuenta-de-cobro'}.pdf`;
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
@@ -712,7 +735,7 @@ router.get(
     requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
         const invoice = await getInvoiceById(req.params.publicId);
-        if (!invoice) return sendError(res, 404, 'Factura no encontrada');
+        if (!invoice) return sendError(res, 404, 'Cuenta de cobro no encontrada');
 
         sendData(res, invoice);
     })
@@ -801,6 +824,14 @@ router.post(
             return sendError(res, 400, 'Completa los campos obligatorios');
         }
 
+        if (req.file) {
+            const filePath = path.join(uploadsDir, req.file.filename);
+            const valid = await verifyFileType(filePath);
+            if (!valid) {
+                return sendError(res, 400, 'El archivo no coincide con su tipo declarado');
+            }
+        }
+
         const movement = await createMovement({
             date,
             type,
@@ -827,6 +858,14 @@ router.put(
 
         if (!date || !type || !amount || !payment_type || !category) {
             return sendError(res, 400, 'Completa los campos obligatorios');
+        }
+
+        if (req.file) {
+            const filePath = path.join(uploadsDir, req.file.filename);
+            const valid = await verifyFileType(filePath);
+            if (!valid) {
+                return sendError(res, 400, 'El archivo no coincide con su tipo declarado');
+            }
         }
 
         const movement = await updateMovement(req.params.id, {

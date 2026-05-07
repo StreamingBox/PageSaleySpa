@@ -209,7 +209,7 @@ export default function MovementsPage() {
                             },
                             {
                                 key: 'actions',
-                                label: 'Acciones',
+                                label: 'Acciónes',
                                 align: 'right',
                                 render: row => (
                                     <div className="table-action-group">

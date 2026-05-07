@@ -131,7 +131,7 @@ export default function AppointmentEditorDrawer({
                             value={form.client_id}
                             options={clientOptions}
                             placeholder="Selecciona un cliente"
-                            searchPlaceholder="Busca por nombre, telefono o direccion"
+                            searchPlaceholder="Busca por nombre, teléfono o dirección"
                             emptyMessage="No encontre clientes."
                             onChange={nextValue =>
                                 setForm(current => ({ ...current, client_id: nextValue }))
@@ -146,7 +146,7 @@ export default function AppointmentEditorDrawer({
                         value={form.product_id}
                         options={productOptions}
                         placeholder="Selecciona un servicio"
-                        searchPlaceholder="Busca por nombre o duracion"
+                        searchPlaceholder="Busca por nombre o duración"
                         emptyMessage="No encontre servicios."
                         onChange={nextValue =>
                             setForm(current => ({
@@ -175,7 +175,7 @@ export default function AppointmentEditorDrawer({
                     </label>
 
                     <label className="field">
-                        <span>Duracion</span>
+                        <span>Duración</span>
                         <select
                             value={form.duration_minutes}
                             onChange={event =>

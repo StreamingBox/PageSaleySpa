@@ -22,7 +22,10 @@
         <a href="/sales"      class="nav-link">Ventas</a>
         <a href="/movements"  class="nav-link">Movimientos</a>
         <a href="/categories" class="nav-link active">Categorías</a>
-        <a href="/logout"     class="nav-link">Salir</a>
+        <form action="/logout" method="POST" style="display:inline;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="nav-link" style="background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;">Salir</button>
+        </form>
     </div>
 </nav>
 

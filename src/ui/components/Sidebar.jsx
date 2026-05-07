@@ -1,7 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { navigationItems } from '../lib/navigation';
+import { getCsrfToken } from '../lib/api';
 
 export default function Sidebar({ mobileOpen, onClose }) {
+    const csrfToken = getCsrfToken();
+
     return (
         <>
             <aside className={`sidebar ${mobileOpen ? 'sidebar--open' : ''}`}>
@@ -33,9 +36,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
                     })}
                 </nav>
 
-                <a className="sidebar__logout" href="/logout">
-                    Cerrar sesión
-                </a>
+                <form action="/logout" method="POST" className="sidebar__logout-form">
+                    <input type="hidden" name="_csrf" value={csrfToken} />
+                    <button type="submit" className="sidebar__logout">
+                        Cerrar sesión
+                    </button>
+                </form>
             </aside>
 
             {mobileOpen ? <button className="sidebar__backdrop" onClick={onClose} /> : null}

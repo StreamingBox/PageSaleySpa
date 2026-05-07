@@ -4,7 +4,7 @@ async function login(page) {
     await page.goto('/login');
     await page.getByLabel(/Correo/i).fill(process.env.E2E_USER_EMAIL);
     await page.getByLabel(/Contra/i).fill(process.env.E2E_USER_PASSWORD);
-    await page.getByRole('button', { name: 'Entrar al panel' }).click();
+    await page.getByRole('button', { name: /Iniciar/i }).click();
     await expect(page).toHaveURL(/\/$/);
 }
 

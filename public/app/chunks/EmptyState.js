@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime.js";var t=e();function n({title:e,description:n,action:r}){return(0,t.jsxs)(`div`,{className:`empty-state`,children:[(0,t.jsx)(`div`,{className:`empty-state__pulse`}),(0,t.jsx)(`h3`,{children:e}),(0,t.jsx)(`p`,{children:n}),r?(0,t.jsx)(`div`,{className:`empty-state__action`,children:r}):null]})}export{n as t};

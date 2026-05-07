@@ -62,7 +62,7 @@ export default function MovementsFormPage() {
             setForm(current => ({ ...current, category: response.data.name }));
             setNewCategoryName('');
             setShowCategoryCreator(false);
-            showToast('Categoría creada y seleccionada', 'success');
+            showToast('Categoría creada y selecciónada', 'success');
         },
         onError: error => showToast(error.message, 'danger')
     });
@@ -182,7 +182,7 @@ export default function MovementsFormPage() {
                                         }))
                                     }
                                 >
-                                    <option value="">Selecciona una categoría</option>
+                                    <option value="">Seleccióna una categoría</option>
                                     {(categoriesQuery.data?.data || []).map(category => (
                                         <option key={category.id} value={category.name}>
                                             {category.name}
@@ -237,7 +237,7 @@ export default function MovementsFormPage() {
                             <div className="upload-card">
                                 <label className="button button--ghost upload-card__button">
                                     <Paperclip size={16} />
-                                    Seleccionar archivo
+                                    Selecciónar archivo
                                     <input
                                         hidden
                                         type="file"

@@ -43,7 +43,7 @@ const adminNavigationItems = [
     },
     {
         to: '/invoices',
-        label: 'Facturas',
+        label: 'Cuentas de cobro',
         icon: FileText
     },
     {
@@ -95,7 +95,7 @@ const adminRouteMeta = [
         pattern: '/clients/:hash',
         exact: true,
         title: 'Perfil de cliente',
-        description: 'Resumen de contacto, compras y facturacion del cliente.'
+        description: 'Resumen de contacto, compras y cuentas de cobro del cliente.'
     },
     {
         pattern: '/clients/*',
@@ -116,20 +116,20 @@ const adminRouteMeta = [
     {
         pattern: '/invoices/new',
         exact: true,
-        title: 'Nueva factura',
+        title: 'Nueva cuenta de cobro',
         description: 'Agrupa ventas pendientes de un mismo cliente y genera un PDF numerado.'
     },
     {
         pattern: '/invoices/:publicId',
         exact: true,
-        title: 'Detalle de factura',
-        description: 'Consulta, descarga y marca pagos sobre la factura emitida.'
+        title: 'Detalle de cuenta de cobro',
+        description: 'Consulta, descarga y marca pagos sobre la cuenta de cobro emitida.'
     },
     {
         pattern: '/invoices',
         exact: true,
-        title: 'Facturas',
-        description: 'Archivo de facturas con filtros, consulta y descarga del PDF.'
+        title: 'Cuentas de cobro',
+        description: 'Archivo de cuentas de cobro con filtros, consulta y descarga del PDF.'
     },
     {
         pattern: '/sales/new',

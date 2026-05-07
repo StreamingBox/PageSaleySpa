@@ -113,12 +113,12 @@ export default function ProductsPage() {
         },
         {
             key: 'duration_minutes',
-            label: 'Duracion',
+            label: 'Duración',
             render: row => `${row.duration_minutes} min`
         },
         {
             key: 'actions',
-            label: 'Acciones',
+            label: 'Acciónes',
             align: 'right',
             render: row => (
                 <button
@@ -236,7 +236,7 @@ export default function ProductsPage() {
                     </label>
 
                     <label className="field">
-                        <span>Duracion (minutos)</span>
+                        <span>Duración (minutos)</span>
                         <input
                             required
                             min="15"

@@ -153,7 +153,7 @@ export default function CategoriesPage() {
                         { key: 'name', label: 'Nombre' },
                         {
                             key: 'actions',
-                            label: 'Acciones',
+                            label: 'Acciónes',
                             align: 'right',
                             render: row => (
                                 <div className="table-action-group">

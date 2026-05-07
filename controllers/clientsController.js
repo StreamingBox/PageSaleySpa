@@ -1,16 +1,7 @@
 const pool   = require('../config/db');
-const crypto = require('crypto');
-const SECRET = process.env.HASH_SECRET || 'cambiame_por_algo_secreto';
+const { hashId, SECRET } = require('../config/encryption');
 
 /**
- * Genera un SHA-1 hash a partir del SECRET + id
- */
-function hashId(id) {
-    return crypto
-        .createHash('sha1')
-        .update(SECRET + id)
-        .digest('hex');
-}
 
 /**
  * Listar clientes (opcionalmente filtrados por búsqueda) y adjuntar hash para edición

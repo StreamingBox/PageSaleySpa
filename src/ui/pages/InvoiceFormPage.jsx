@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckSquare, FileText, Save } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -68,7 +68,7 @@ export default function InvoiceFormPage() {
                 queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             ]);
 
-            showToast('Factura creada', 'success');
+            showToast('Cuenta de cobro creada', 'success');
             navigate(`/invoices/${response.data.public_id}`);
         },
         onError: error => showToast(error.message, 'danger')
@@ -99,7 +99,7 @@ export default function InvoiceFormPage() {
         <div className="page-stack">
             <Link className="inline-link" to="/invoices">
                 <ArrowLeft size={14} />
-                Volver a facturas
+                Volver a cuentas de cobro
             </Link>
 
             <section className="editor-grid">
@@ -116,8 +116,8 @@ export default function InvoiceFormPage() {
                 >
                     <div className="panel__header">
                         <div>
-                            <p className="panel__eyebrow">Facturas</p>
-                            <h3>Nueva factura</h3>
+                            <p className="panel__eyebrow">Cuentas de cobro</p>
+                            <h3>Nueva cuenta de cobro</h3>
                         </div>
                     </div>
 
@@ -127,9 +127,9 @@ export default function InvoiceFormPage() {
                             <SearchableSelect
                                 value={form.client_id}
                                 options={clientOptions}
-                                placeholder="Selecciona un cliente"
-                                searchPlaceholder="Busca por nombre o teléfono"
-                                emptyMessage="No encontré clientes con ese filtro."
+                                placeholder="SelecciÃ³na un cliente"
+                                searchPlaceholder="Busca por nombre o telÃ©fono"
+                                emptyMessage="No encontrÃ© clientes con ese filtro."
                                 onChange={nextValue =>
                                     setForm(current => ({ ...current, client_id: nextValue }))
                                 }
@@ -137,7 +137,7 @@ export default function InvoiceFormPage() {
                         </label>
 
                         <label className="field">
-                            <span>Fecha de emisión</span>
+                            <span>Fecha de emisiÃ³n</span>
                             <input
                                 type="date"
                                 value={form.issue_date}
@@ -154,7 +154,7 @@ export default function InvoiceFormPage() {
                     {!form.client_id ? (
                         <EmptyState
                             title="Primero elige un cliente"
-                            description="La factura solo puede agrupar ventas pendientes del mismo cliente."
+                            description="La cuenta de cobro solo puede agrupar ventas pendientes del mismo cliente."
                         />
                     ) : candidatesQuery.isLoading ? (
                         <section className="panel panel--flat">
@@ -169,7 +169,7 @@ export default function InvoiceFormPage() {
                             <div className="invoice-candidate-section__top">
                                 <div>
                                     <p className="panel__eyebrow">Ventas pendientes</p>
-                                    <strong>{candidateRows.length} disponibles para facturar</strong>
+                                    <strong>{candidateRows.length} disponibles para cuenta de cobro</strong>
                                 </div>
 
                                 <div className="table-action-group">
@@ -184,7 +184,7 @@ export default function InvoiceFormPage() {
                                         type="button"
                                     >
                                         <CheckSquare size={14} />
-                                        Seleccionar todas
+                                        SelecciÃ³nar todas
                                     </button>
                                     <button
                                         className="table-action"
@@ -219,7 +219,7 @@ export default function InvoiceFormPage() {
                                             <div className="invoice-candidate-card__body">
                                                 <strong>{row.product_name}</strong>
                                                 <span>
-                                                    Venta #{row.id} · {formatDate(row.sold_at)}
+                                                    Venta #{row.id} Â· {formatDate(row.sold_at)}
                                                 </span>
                                             </div>
                                             <div className="invoice-candidate-card__meta">
@@ -236,8 +236,8 @@ export default function InvoiceFormPage() {
                         </div>
                     ) : (
                         <EmptyState
-                            title="Sin ventas pendientes para facturar"
-                            description="Este cliente no tiene ventas activas, pendientes y libres de factura."
+                            title="Sin ventas pendientes para cuenta de cobro"
+                            description="Este cliente no tiene ventas activas, pendientes y libres de cuenta de cobro."
                         />
                     )}
 
@@ -247,7 +247,7 @@ export default function InvoiceFormPage() {
                         type="submit"
                     >
                         <Save size={16} />
-                        {createMutation.isPending ? 'Creando...' : 'Crear factura'}
+                        {createMutation.isPending ? 'Creando...' : 'Crear cuenta de cobro'}
                     </button>
                 </form>
 
@@ -257,22 +257,22 @@ export default function InvoiceFormPage() {
                     <div className="summary-metric">
                         <FileText size={18} />
                         <div>
-                            <strong>{selectedCount} ventas seleccionadas</strong>
+                            <strong>{selectedCount} ventas selecciÃ³nadas</strong>
                             <span>
                                 {selectedClient
                                     ? `Cliente: ${selectedClient.name}`
-                                    : 'Selecciona un cliente'}
+                                    : 'SelecciÃ³na un cliente'}
                             </span>
                         </div>
                     </div>
                     <div className="summary-metric">
                         <div>
-                            <strong>Emisión</strong>
+                            <strong>EmisiÃ³n</strong>
                             <span>{formatDate(form.issue_date)}</span>
                         </div>
                     </div>
                     <p className="summary-note">
-                        La factura se crea en estado pendiente y bloqueará las ventas elegidas para que no puedan facturarse otra vez.
+                        La cuenta de cobro se crea en estado pendiente y bloquearÃ¡ las ventas elegidas para que no puedan asociarse otra vez.
                     </p>
                 </aside>
             </section>

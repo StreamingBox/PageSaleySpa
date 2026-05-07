@@ -348,7 +348,7 @@ export default function AnalyticsPage() {
     if (analyticsQuery.isLoading) {
         return (
             <section className="panel">
-                <p>Cargando estadisticas...</p>
+                <p>Cargando estadísticas...</p>
             </section>
         );
     }
@@ -514,8 +514,8 @@ export default function AnalyticsPage() {
                             </h3>
                             <p className="metrics-panel__subtitle metrics-panel__subtitle--left">
                                 {granularity === 'weekly'
-                                    ? 'Semana a semana para los meses seleccionados.'
-                                    : 'Comportamiento diario del mes seleccionado comparado contra los demas.'}
+                                    ? 'Semana a semana para los meses selecciónados.'
+                                    : 'Comportamiento diario del mes selecciónado comparado contra los demas.'}
                             </p>
                         </div>
                         <div className="chart-legend">

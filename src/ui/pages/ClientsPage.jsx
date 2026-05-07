@@ -145,34 +145,34 @@ export default function ClientsPage() {
                         >
                             {row.name}
                         </button>
-                        <span>{row.phone ? 'Contacto disponible' : 'Sin telefono registrado'}</span>
+                        <span>{row.phone ? 'Contacto disponible' : 'Sin teléfono registrado'}</span>
                     </div>
                 </div>
             )
         },
         {
             key: 'phone',
-            label: 'Telefono',
+            label: 'Teléfono',
             render: row => (
                 <span
                     className={`client-cell__phone${
                         row.phone ? '' : ' client-cell__phone--muted'
                     }`}
                 >
-                    {row.phone || 'Sin telefono'}
+                    {row.phone || 'Sin teléfono'}
                 </span>
             )
         },
         {
             key: 'address',
-            label: 'Direccion',
+            label: 'Dirección',
             render: row => (
                 <span
                     className={`client-cell__address${
                         row.address ? '' : ' client-cell__address--muted'
                     }`}
                 >
-                    {row.address || 'Sin direccion registrada'}
+                    {row.address || 'Sin dirección registrada'}
                 </span>
             )
         },
@@ -252,7 +252,7 @@ export default function ClientsPage() {
                         </label>
 
                         <label className="field">
-                            <span>Telefono</span>
+                            <span>Teléfono</span>
                             <input
                                 value={form.phone}
                                 onChange={event =>
@@ -262,7 +262,7 @@ export default function ClientsPage() {
                         </label>
 
                         <label className="field">
-                            <span>Direccion</span>
+                            <span>Dirección</span>
                             <input
                                 value={form.address}
                                 onChange={event =>
@@ -303,7 +303,7 @@ export default function ClientsPage() {
                 <form className="search-bar" onSubmit={submitSearch}>
                     <Search size={16} />
                     <input
-                        placeholder="Buscar por nombre, telefono, direccion o complemento"
+                        placeholder="Buscar por nombre, teléfono, dirección o complemento"
                         value={draftSearch}
                         onChange={event => setDraftSearch(event.target.value)}
                     />
@@ -333,8 +333,8 @@ export default function ClientsPage() {
                     sortOptions={[
                         { value: 'name-asc', label: 'Nombre A-Z' },
                         { value: 'name-desc', label: 'Nombre Z-A' },
-                        { value: 'phone-asc', label: 'Telefono 0-9' },
-                        { value: 'phone-desc', label: 'Telefono 9-0' }
+                        { value: 'phone-asc', label: 'Teléfono 0-9' },
+                        { value: 'phone-desc', label: 'Teléfono 9-0' }
                     ]}
                     limitValue={visibleLimit}
                     onLimitChange={setVisibleLimit}
@@ -399,7 +399,7 @@ export default function ClientsPage() {
                     </label>
 
                     <label className="field">
-                        <span>Telefono</span>
+                        <span>Teléfono</span>
                         <input
                             value={form.phone}
                             onChange={event =>
@@ -409,7 +409,7 @@ export default function ClientsPage() {
                     </label>
 
                     <label className="field">
-                        <span>Direccion</span>
+                        <span>Dirección</span>
                         <input
                             value={form.address}
                             onChange={event =>

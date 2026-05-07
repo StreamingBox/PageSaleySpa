@@ -68,8 +68,16 @@ function buildSessionUser(user) {
     };
 }
 
-function renderLogin(res, payload = {}) {
+function setNoStore(res) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+}
+
+function renderLogin(req, res, payload = {}) {
+    setNoStore(res);
     return res.render('auth/login', {
+        csrfToken: req.csrfToken({ overwrite: true }),
         error: null,
         email: '',
         rememberSession: false,
@@ -77,41 +85,55 @@ function renderLogin(res, payload = {}) {
     });
 }
 
-exports.showLogin = (_req, res) => renderLogin(res);
-
-exports.showRegister = (_req, res) =>
-    res.render('auth/register', {
+function renderRegister(req, res, payload = {}) {
+    setNoStore(res);
+    return res.render('auth/register', {
+        csrfToken: req.csrfToken({ overwrite: true }),
         error: null,
         username: '',
-        email: ''
+        email: '',
+        ...payload
     });
+}
+
+exports.showLogin = (req, res) => renderLogin(req, res);
+
+exports.showRegister = (req, res) => renderRegister(req, res);
 
 exports.register = async (req, res) => {
     const { username, email, password } = req.body || {};
 
     if (!username || !email || !password) {
-        return res.render('auth/register', {
+        return renderRegister(req, res, {
             error: 'Todos los campos son obligatorios.',
             username: username || '',
             email: email || ''
         });
     }
 
+    if (password.length < 8) {
+        return renderRegister(req, res, {
+            error: 'La contrasena debe tener al menos 8 caracteres.',
+            username,
+            email
+        });
+    }
+
     try {
         if (await findUserByEmail(email)) {
-            return res.render('auth/register', {
+            return renderRegister(req, res, {
                 error: 'El correo ya esta registrado.',
                 username,
                 email
             });
         }
 
-        const hash = await bcrypt.hash(password, 10);
+        const hash = await bcrypt.hash(password, 12);
         await createUser(username, email, hash);
         res.redirect('/login');
     } catch (err) {
         console.error(err);
-        res.render('auth/register', {
+        return renderRegister(req, res, {
             error: 'Error al crear usuario.',
             username,
             email
@@ -125,8 +147,8 @@ exports.login = async (req, res) => {
         req.body?.remember_session === '1' || req.body?.remember_session === 'on';
 
     if (!email || !password) {
-        return renderLogin(res, {
-            error: 'Ingrese correo y contraseña.',
+        return renderLogin(req, res, {
+            error: 'Ingrese correo y contrasena.',
             email,
             rememberSession
         });
@@ -135,27 +157,39 @@ exports.login = async (req, res) => {
     try {
         const user = await findUserByEmail(email);
         if (!user || !(await verifyPassword(password, user.password))) {
-            return renderLogin(res, {
-                error: 'Credenciales inválidas.',
+            return renderLogin(req, res, {
+                error: 'Credenciales invalidas.',
                 email,
                 rememberSession
             });
         }
 
-        req.session.user = buildSessionUser(user);
-        req.session.rememberSession = rememberSession;
-        req.session.cookie.maxAge = rememberSession
-            ? res.app.locals.rememberSessionTtlMs
-            : res.app.locals.sessionTtlMs;
-
-        const fallbackPath = req.session.user.role === 'admin' ? '/' : '/appointments';
+        const fallbackPath = user.role === 'admin' ? '/' : '/appointments';
         const dest = req.session.returnTo || fallbackPath;
         delete req.session.returnTo;
-        req.session.save(() => res.redirect(dest));
+
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error(err);
+                return renderLogin(req, res, {
+                    error: 'Error al iniciar sesion.',
+                    email,
+                    rememberSession
+                });
+            }
+
+            req.session.user = buildSessionUser(user);
+            req.session.rememberSession = rememberSession;
+            req.session.cookie.maxAge = rememberSession
+                ? res.app.locals.rememberSessionTtlMs
+                : res.app.locals.sessionTtlMs;
+
+            req.session.save(() => res.redirect(dest));
+        });
     } catch (err) {
         console.error(err);
-        renderLogin(res, {
-            error: 'Error al iniciar sesión.',
+        return renderLogin(req, res, {
+            error: 'Error al iniciar sesion.',
             email,
             rememberSession
         });

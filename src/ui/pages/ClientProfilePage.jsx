@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -18,7 +18,7 @@ import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import { getSessionUser } from '../lib/navigation';
 
-const avatarChoices = ['🌸', '💆', '🪷', '✨', '🧴', '💖', '🌿', '🕯️', '🎀', '🌺', '🫧', '💅'];
+const avatarChoices = ['ðŸŒ¸', 'ðŸ’†', 'ðŸª·', 'âœ¨', 'ðŸ§´', 'ðŸ’–', 'ðŸŒ¿', 'ðŸ•¯ï¸', 'ðŸŽ€', 'ðŸŒº', 'ðŸ«§', 'ðŸ’…'];
 
 function getInitials(name) {
     return String(name || '')
@@ -125,14 +125,14 @@ export default function ClientProfilePage() {
         {
             icon: Phone,
             title: 'Informacion de contacto',
-            subtitle: client.phone || 'Sin telefono registrado',
+            subtitle: client.phone || 'Sin telÃ©fono registrado',
             onClick: () =>
                 document.getElementById('profile-contact')?.scrollIntoView({ behavior: 'smooth' })
         },
         {
             icon: MapPin,
-            title: 'Direccion',
-            subtitle: client.address || 'Sin direccion registrada',
+            title: 'DirecciÃ³n',
+            subtitle: client.address || 'Sin direcciÃ³n registrada',
             onClick: () =>
                 document.getElementById('profile-address')?.scrollIntoView({ behavior: 'smooth' })
         },
@@ -149,8 +149,8 @@ export default function ClientProfilePage() {
                   },
                   {
                       icon: Settings2,
-                      title: 'Facturacion y saldo',
-                      subtitle: `${summary.invoices_count} facturas emitidas`,
+                      title: 'Cuentas de cobro y saldo',
+                      subtitle: `${summary.invoices_count} cuentas de cobro emitidas`,
                       onClick: () =>
                           document
                               .getElementById('profile-billing')
@@ -231,7 +231,7 @@ export default function ClientProfilePage() {
                                     <strong>{item.title}</strong>
                                     <small>{item.subtitle}</small>
                                 </span>
-                                <span className="profile-action-card__arrow">›</span>
+                                <span className="profile-action-card__arrow">â€º</span>
                             </button>
                         );
                     })}
@@ -287,18 +287,18 @@ export default function ClientProfilePage() {
 
                     <div className="client-detail__grid">
                         <article className="client-detail__item">
-                            <span className="client-detail__label">Telefono</span>
+                            <span className="client-detail__label">TelÃ©fono</span>
                             <strong className="client-detail__value">
-                                {client.phone || 'Sin telefono'}
+                                {client.phone || 'Sin telÃ©fono'}
                             </strong>
                         </article>
 
                         <article className="client-detail__item">
-                            <span className="client-detail__label">Ultima factura</span>
+                            <span className="client-detail__label">Ultima cuenta de cobro</span>
                             <strong className="client-detail__value">
                                 {summary.last_invoice_at
                                     ? formatDate(summary.last_invoice_at)
-                                    : 'Sin facturas'}
+                                    : 'Sin cuentas de cobro'}
                             </strong>
                         </article>
 
@@ -306,9 +306,9 @@ export default function ClientProfilePage() {
                             className="client-detail__item client-detail__item--full"
                             id="profile-address"
                         >
-                            <span className="client-detail__label">Direccion</span>
+                            <span className="client-detail__label">DirecciÃ³n</span>
                             <strong className="client-detail__value">
-                                {client.address || 'Sin direccion registrada'}
+                                {client.address || 'Sin direcciÃ³n registrada'}
                             </strong>
                         </article>
 
@@ -343,7 +343,7 @@ export default function ClientProfilePage() {
                         {isAdmin ? (
                             <a className="button button--ghost" href={`/invoices?client_id=${client.id}`}>
                                 <FileText size={16} />
-                                Ver facturas
+                                Ver cuentas de cobro
                             </a>
                         ) : null}
                     </div>
@@ -354,7 +354,7 @@ export default function ClientProfilePage() {
                         <div className="panel__header">
                             <div>
                                 <p className="panel__eyebrow">Resumen</p>
-                                <h3>Facturacion y saldo</h3>
+                                <h3>Cuentas de cobro y saldo</h3>
                             </div>
                         </div>
 
@@ -375,7 +375,7 @@ export default function ClientProfilePage() {
                                 </span>
                                 <div>
                                     <strong>{summary.invoices_count}</strong>
-                                    <small>Facturas emitidas</small>
+                                    <small>cuentas de cobro emitidas</small>
                                 </div>
                             </article>
                         </div>
@@ -403,7 +403,7 @@ export default function ClientProfilePage() {
                             </div>
                         ) : (
                             <p className="metric-empty">
-                                Todavia no hay facturas registradas para este cliente.
+                                Todavia no hay cuentas de cobro registradas para este cliente.
                             </p>
                         )}
                     </section>
@@ -426,7 +426,7 @@ export default function ClientProfilePage() {
                                     <div>
                                         <strong>{sale.product_name}</strong>
                                         <small>
-                                            {formatDate(sale.sold_at)} · {sale.quantity} unidad
+                                            {formatDate(sale.sold_at)} Â· {sale.quantity} unidad
                                             {sale.quantity === 1 ? '' : 'es'}
                                         </small>
                                     </div>

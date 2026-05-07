@@ -373,7 +373,7 @@ function AdminAppointmentsPage() {
             <section className="hero">
                 <div>
                     <p className="hero__eyebrow">Agenda inteligente</p>
-                    <h3>Modulo de citas</h3>
+                    <h3>Módulo de citas</h3>
                     <p className="hero__text">
                         Administra disponibilidad, bloqueos, servicios y accesos directos a Google
                         Calendar y Google Maps desde un solo lugar.
@@ -461,7 +461,7 @@ function AdminAppointmentsPage() {
                                 value={bookingForm.client_id}
                                 options={clientOptions}
                                 placeholder="Selecciona un cliente"
-                                searchPlaceholder="Busca por nombre, telefono o direccion"
+                                searchPlaceholder="Busca por nombre, Teléfono o dirección"
                                 emptyMessage="No encontre clientes con ese filtro."
                                 onChange={nextValue =>
                                     setBookingForm(current => ({ ...current, client_id: nextValue }))
@@ -475,7 +475,7 @@ function AdminAppointmentsPage() {
                                 value={bookingForm.product_id}
                                 options={productOptions}
                                 placeholder="Selecciona un servicio"
-                                searchPlaceholder="Busca por nombre o duracion"
+                                searchPlaceholder="Busca por nombre o duración"
                                 emptyMessage="No encontre servicios con ese filtro."
                                 onChange={nextValue => {
                                     const nextProduct = products.find(
@@ -744,7 +744,7 @@ function AdminAppointmentsPage() {
                     <div className="panel__header">
                         <div>
                             <p className="panel__eyebrow">Seguimiento</p>
-                            <h3>Citas del dia</h3>
+                            <h3>Citas del día</h3>
                         </div>
                     </div>
 
@@ -861,7 +861,7 @@ function AdminAppointmentsPage() {
 
                                     <div className="appointment-card__meta">
                                         <span>
-                                            <strong>Telefono:</strong> {appointment.client_phone || 'Sin telefono'}
+                                            <strong>Teléfono:</strong> {appointment.client_phone || 'Sin teléfono'}
                                         </span>
                                         <span>
                                             <strong>Duracion:</strong>{' '}
@@ -908,7 +908,7 @@ function AdminAppointmentsPage() {
 
                                     <div className="appointment-card__meta">
                                         <span>
-                                            <strong>Telefono:</strong> {appointment.client_phone || 'Sin telefono'}
+                                            <strong>Teléfono:</strong> {appointment.client_phone || 'Sin teléfono'}
                                         </span>
                                         <span>
                                             <strong>Duracion:</strong>{' '}
@@ -997,7 +997,7 @@ function AdminAppointmentsPage() {
                             </label>
 
                             <label className="field">
-                                <span>Anticipacion minima</span>
+                                <span>Anticipación mínima</span>
                                 <input
                                     min="1"
                                     step="1"
@@ -1027,7 +1027,7 @@ function AdminAppointmentsPage() {
                         </label>
 
                         <label className="field">
-                            <span>Direccion del spa</span>
+                            <span>Dirección del spa</span>
                             <input
                                 value={settingsForm.business_address}
                                 onChange={event =>
@@ -1038,7 +1038,7 @@ function AdminAppointmentsPage() {
                                 }
                             />
                             <small className="field__hint">
-                                Esta direccion se usa para Google Maps y como ubicacion del evento.
+                                Esta dirección se usa para Google Maps y como ubicación del evento.
                             </small>
                         </label>
 
@@ -1067,7 +1067,7 @@ function AdminAppointmentsPage() {
                         >
                             {saveSettingsMutation.isPending
                                 ? 'Guardando...'
-                                : 'Guardar configuracion'}
+                                : 'Guardar configuración'}
                         </button>
                     </form>
                 </article>
@@ -1112,3 +1112,4 @@ export default function AppointmentsPage() {
 
     return <AdminAppointmentsPage />;
 }
+

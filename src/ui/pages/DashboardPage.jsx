@@ -380,7 +380,7 @@ export default function DashboardPage() {
                                                     }
                                                 >
                                                     <FileText size={14} />
-                                                    Generar factura
+                                                    Generar cuenta de cobro
                                                 </button>
                                             </div>
                                         </article>
@@ -461,7 +461,7 @@ export default function DashboardPage() {
                                 onClick={() => navigate(selectedClientInvoiceUrl)}
                             >
                                 <FileText size={16} />
-                                Generar factura
+                                Generar cuenta de cobro
                             </button>
 
                             <a
@@ -483,7 +483,7 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <div className="client-detail client-detail--loading">
-                        <p>Selecciona un cliente para ver sus datos.</p>
+                        <p>Seleccióna un cliente para ver sus datos.</p>
                     </div>
                 )}
             </DrawerForm>

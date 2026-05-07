@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Download, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -133,7 +133,7 @@ export default function SalesListPage() {
         { key: 'price', label: 'Total', render: row => formatMoney(row.price) },
         {
             key: 'invoice_number',
-            label: 'Factura',
+            label: 'Cuenta de cobro',
             render: row =>
                 row.invoice_public_id ? (
                     <Link className="inline-link" to={`/invoices/${row.invoice_public_id}`}>
@@ -141,7 +141,7 @@ export default function SalesListPage() {
                         {row.invoice_number}
                     </Link>
                 ) : (
-                    'Sin factura'
+                    'Sin cuenta de cobro'
                 )
         },
         {
@@ -156,7 +156,7 @@ export default function SalesListPage() {
         { key: 'payment_source', label: 'Origen' },
         {
             key: 'actions',
-            label: 'Acciones',
+            label: 'AcciÃ³nes',
             align: 'right',
             render: row =>
                 row.invoice_public_id ? (
@@ -167,7 +167,7 @@ export default function SalesListPage() {
                             type="button"
                         >
                             <FileText size={14} />
-                            Ver factura
+                            Ver cuenta de cobro
                         </button>
                     </div>
                 ) : (
@@ -211,7 +211,7 @@ export default function SalesListPage() {
                 </Link>
                 <Link className="button button--ghost" to="/analytics">
                     <BarChart3 size={16} />
-                    Ver estadisticas
+                    Ver estadÃ­sticas
                 </Link>
                 <a className="button button--ghost" href={getExportUrl(filters)}>
                     <Download size={16} />
@@ -271,8 +271,8 @@ export default function SalesListPage() {
                             value={draft.client_id}
                             options={clientFilterOptions}
                             placeholder="Todos los clientes"
-                            searchPlaceholder="Busca por nombre, teléfono o dirección"
-                            emptyMessage="No encontré clientes con ese filtro."
+                            searchPlaceholder="Busca por nombre, telÃ©fono o direcciÃ³n"
+                            emptyMessage="No encontrÃ© clientes con ese filtro."
                             onChange={nextValue =>
                                 setDraft(current => ({
                                     ...current,
@@ -288,7 +288,7 @@ export default function SalesListPage() {
                             options={statusOptions}
                             placeholder="Todos"
                             searchPlaceholder="Busca un estado"
-                            emptyMessage="No encontré estados con ese filtro."
+                            emptyMessage="No encontrÃ© estados con ese filtro."
                             onChange={nextValue =>
                                 setDraft(current => ({ ...current, paid: nextValue }))
                             }
@@ -299,12 +299,12 @@ export default function SalesListPage() {
 
             <CollectionToolbar
                 summary={`${visibleSales.length} de ${sortedSales.length} ventas visibles`}
-                helperText="El historial comercial muestra también la factura vinculada cuando exista."
+                helperText="El historial comercial muestra tambiÃ©n la cuenta de cobro vinculada cuando exista."
                 sortValue={sortValue}
                 onSortChange={setSortValue}
                 sortOptions={[
-                    { value: 'date-desc', label: 'Fecha más reciente' },
-                    { value: 'date-asc', label: 'Fecha más antigua' },
+                    { value: 'date-desc', label: 'Fecha mÃ¡s reciente' },
+                    { value: 'date-asc', label: 'Fecha mÃ¡s antigua' },
                     { value: 'total-desc', label: 'Total mayor a menor' },
                     { value: 'total-asc', label: 'Total menor a mayor' },
                     { value: 'client-asc', label: 'Cliente A-Z' },
@@ -329,8 +329,8 @@ export default function SalesListPage() {
                     rowKey="id"
                     empty={
                         <EmptyState
-                            title="Aún no hay ventas"
-                            description="Registra la primera venta para activar métricas y exportación."
+                            title="AÃºn no hay ventas"
+                            description="Registra la primera venta para activar mÃ©tricas y exportaciÃ³n."
                         />
                     }
                 />
@@ -339,7 +339,7 @@ export default function SalesListPage() {
             <ConfirmDialog
                 open={Boolean(pendingDelete)}
                 title="Inactivar venta"
-                description={`La venta de ${pendingDelete?.client_name || ''} quedará fuera del listado activo.`}
+                description={`La venta de ${pendingDelete?.client_name || ''} quedarÃ¡ fuera del listado activo.`}
                 confirmLabel={deleteMutation.isPending ? 'Inactivando...' : 'Inactivar'}
                 onCancel={() => setPendingDelete(null)}
                 onConfirm={() => deleteMutation.mutate(pendingDelete.id)}

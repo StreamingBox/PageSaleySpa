@@ -1,11 +1,5 @@
 const pool   = require('../config/db');
-const crypto = require('crypto');
-const SECRET = process.env.HASH_SECRET || 'cambiame_por_algo_secreto';
-
-/** Genera hash SHA-1 a partir de id */
-function hashId(id) {
-    return crypto.createHash('sha1').update(SECRET + id).digest('hex');
-}
+const { hashId, SECRET } = require('../config/encryption');
 
 /* ---------- CRUD ---------- */
 

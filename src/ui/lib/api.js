@@ -1,12 +1,23 @@
+function readCookie(name) {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+export function getCsrfToken() {
+    return readCookie('x-csrf-token');
+}
+
 export async function apiFetch(url, options = {}) {
     const { body, headers, method = 'GET' } = options;
     const isFormData = body instanceof FormData;
+    const csrfToken = getCsrfToken();
 
     const response = await fetch(url, {
         credentials: 'same-origin',
         method,
         headers: {
             ...(isFormData ? {} : body ? { 'Content-Type': 'application/json' } : {}),
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
             ...(headers || {})
         },
         body: isFormData ? body : body ? JSON.stringify(body) : undefined

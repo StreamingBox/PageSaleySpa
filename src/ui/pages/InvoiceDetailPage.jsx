@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, Download, Eye, Wallet } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -52,7 +52,7 @@ export default function InvoiceDetailPage() {
                 queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             ]);
 
-            showToast('Factura marcada como pagada', 'success');
+            showToast('Cuenta de cobro marcada como pagada', 'success');
         },
         onError: error => showToast(error.message, 'danger')
     });
@@ -60,7 +60,7 @@ export default function InvoiceDetailPage() {
     if (invoiceQuery.isLoading) {
         return (
             <section className="panel">
-                <p>Cargando factura...</p>
+                <p>Cargando cuenta de cobro...</p>
             </section>
         );
     }
@@ -79,12 +79,12 @@ export default function InvoiceDetailPage() {
         <div className="page-stack">
             <Link className="inline-link" to="/invoices">
                 <ArrowLeft size={14} />
-                Volver a facturas
+                Volver a cuentas de cobro
             </Link>
 
             <section className="panel invoice-detail-header">
                 <div>
-                    <p className="panel__eyebrow">Factura</p>
+                    <p className="panel__eyebrow">Cuenta de cobro</p>
                     <h3>{invoice.invoice_number}</h3>
                     <p className="invoice-detail-header__text">
                         Emitida el {formatDate(invoice.issue_date)} para {invoice.client_name}.
@@ -118,10 +118,10 @@ export default function InvoiceDetailPage() {
                         {invoice.client_name}
                     </strong>
                     <span className="kpi-card__note">
-                        {invoice.client_phone || 'Sin teléfono'} ·{' '}
+                        {invoice.client_phone || 'Sin telÃ©fono'} Â·{' '}
                         {[invoice.client_address, invoice.client_complemento]
                             .filter(Boolean)
-                            .join(' · ') || 'Sin dirección registrada'}
+                            .join(' Â· ') || 'Sin direcciÃ³n registrada'}
                     </span>
                 </article>
 
@@ -136,8 +136,8 @@ export default function InvoiceDetailPage() {
                     </strong>
                     <span className="kpi-card__note">
                         {invoice.status === 'PAGADA'
-                            ? `${invoice.payment_source} · ${formatDate(invoice.paid_at)}`
-                            : 'Aún pendiente por cobrar'}
+                            ? `${invoice.payment_source} Â· ${formatDate(invoice.paid_at)}`
+                            : 'AÃºn pendiente por cobrar'}
                     </span>
                 </article>
 
@@ -147,7 +147,7 @@ export default function InvoiceDetailPage() {
                         {formatMoney(invoice.total)}
                     </strong>
                     <span className="kpi-card__note">
-                        {invoice.items.length} líneas registradas
+                        {invoice.items.length} lÃ­neas registradas
                     </span>
                 </article>
             </section>
@@ -157,7 +157,7 @@ export default function InvoiceDetailPage() {
                     <div className="panel__header">
                         <div>
                             <p className="panel__eyebrow">Detalle</p>
-                            <h3>Productos facturados</h3>
+                            <h3>Productos cobrados</h3>
                         </div>
                     </div>
 
@@ -186,8 +186,8 @@ export default function InvoiceDetailPage() {
                         rowKey="id"
                         empty={
                             <EmptyState
-                                title="Sin líneas"
-                                description="Esta factura no tiene líneas registradas."
+                                title="Sin lÃ­neas"
+                                description="Esta cuenta de cobro no tiene lÃ­neas registradas."
                             />
                         }
                     />
@@ -202,7 +202,7 @@ export default function InvoiceDetailPage() {
                             <div className="summary-metric">
                                 <CheckCircle2 size={18} />
                                 <div>
-                                    <strong>Factura cerrada</strong>
+                                    <strong>Cuenta de cobro cerrada</strong>
                                     <span>
                                         Pagada el {formatDate(invoice.paid_at)} por{' '}
                                         {invoice.payment_source}
@@ -225,7 +225,7 @@ export default function InvoiceDetailPage() {
                                 <Wallet size={18} />
                                 <div>
                                     <strong>Marcar como pagada</strong>
-                                    <span>Esto actualizará también las ventas incluidas.</span>
+                                    <span>Esto actualizarÃ¡ tambiÃ©n las ventas incluidas.</span>
                                 </div>
                             </div>
 
@@ -263,7 +263,7 @@ export default function InvoiceDetailPage() {
                     )}
 
                     <p className="summary-note">
-                        La numeración es consecutiva y el PDF permanece disponible para consulta en cualquier momento.
+                        La numeraciÃ³n es consecutiva y el PDF permanece disponible para consulta en cualquier momento.
                     </p>
                 </aside>
             </section>

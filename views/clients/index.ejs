@@ -23,7 +23,10 @@
         <a href="/clients">Clientes</a>
         <a href="/products">Productos</a>
         <a href="/sales">Ventas</a>
-        <a href="/logout">Salir</a>
+        <form action="/logout" method="POST" style="display:inline;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" style="background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;">Salir</button>
+        </form>
     </aside>
 </nav>
 

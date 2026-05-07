@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime.js";var t=e();function n({children:e,actions:n}){return(0,t.jsxs)(`section`,{className:`filter-bar`,children:[(0,t.jsx)(`div`,{className:`filter-bar__fields`,children:e}),n?(0,t.jsx)(`div`,{className:`filter-bar__actions`,children:n}):null]})}export{n as t};
