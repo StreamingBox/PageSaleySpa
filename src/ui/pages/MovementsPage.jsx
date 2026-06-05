@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import CollectionToolbar from '../components/CollectionToolbar';
-import { formatDate, formatMoney, getMonthFromDate, getMonthRange } from '../lib/format';
+import { formatDate, formatMoney, getMonthFromDate } from '../lib/format';
 import {
     cleanVisibleSearch,
     getRouteStateValues,
@@ -153,6 +153,55 @@ function buildMovementMonthOptions(rows) {
         }));
 }
 
+function sortMovementRows(rows, sortValue) {
+    const sortedRows = [...rows];
+
+    sortedRows.sort((left, right) => {
+        if (sortValue === 'date-asc') {
+            return String(left.date || '').localeCompare(String(right.date || ''));
+        }
+
+        if (sortValue === 'amount-desc') {
+            return Number(right.amount || 0) - Number(left.amount || 0);
+        }
+
+        if (sortValue === 'amount-asc') {
+            return Number(left.amount || 0) - Number(right.amount || 0);
+        }
+
+        if (sortValue === 'category-asc') {
+            return String(left.category || '').localeCompare(String(right.category || ''));
+        }
+
+        if (sortValue === 'category-desc') {
+            return String(right.category || '').localeCompare(String(left.category || ''));
+        }
+
+        return String(right.date || '').localeCompare(String(left.date || ''));
+    });
+
+    return sortedRows;
+}
+
+function buildLocalMovementPayload(rows, currentPage, pageSize, sortValue) {
+    const sortedRows = sortMovementRows(rows, sortValue);
+    const total = sortedRows.length;
+    const limit = pageSize === 'all' ? Math.max(total, 1) : Number(pageSize) || 5;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const page = Math.min(Math.max(1, currentPage), totalPages);
+    const start = (page - 1) * limit;
+
+    return {
+        data: sortedRows.slice(start, start + limit),
+        meta: {
+            page,
+            pageSize: limit,
+            total,
+            totalPages
+        }
+    };
+}
+
 function buildPointPath(points, tension = 0.2) {
     if (!points.length) return '';
     if (points.length === 1) {
@@ -277,8 +326,8 @@ function buildMovementInsights(rows) {
     };
 }
 
-function buildChartPeriods(series) {
-    if (series.length > 120) {
+function buildChartPeriods(series, compareByMonth = false) {
+    if (compareByMonth || series.length > 120) {
         const months = new Map();
 
         series.forEach(day => {
@@ -367,7 +416,7 @@ function buildChartTicks(maxValue, minValue) {
     return [1, 0];
 }
 
-function MovementTrendChart({ series }) {
+function MovementTrendChart({ series, compareByMonth = false }) {
     const [activeIndex, setActiveIndex] = useState(null);
     const width = 1120;
     const height = 342;
@@ -376,7 +425,7 @@ function MovementTrendChart({ series }) {
     const plotTop = 18;
     const plotHeight = 270;
     const plotWidth = width - plotLeft - plotRight;
-    const periods = buildChartPeriods(series);
+    const periods = buildChartPeriods(series, compareByMonth);
     const maxValue = Math.max(
         ...periods.flatMap(day => [day.income, day.balance > 0 ? day.balance : 0]),
         0
@@ -651,7 +700,7 @@ function MovementBars({ items, emptyText }) {
     );
 }
 
-function MovementInsights({ insights, loading, error }) {
+function MovementInsights({ insights, loading, error, compareByMonth = false, comparisonCount = 0 }) {
     if (loading) {
         return (
             <section className="panel">
@@ -708,10 +757,12 @@ function MovementInsights({ insights, loading, error }) {
                         <h3>Evolución de ingresos y gastos</h3>
                     </div>
                     <p className="metrics-panel__subtitle">
-                        {insights.series.length} días con movimientos en el rango actual.
+                        {compareByMonth
+                            ? `${comparisonCount} meses seleccionados para comparar.`
+                            : `${insights.series.length} días con movimientos en el rango actual.`}
                     </p>
                 </div>
-                <MovementTrendChart series={insights.series} />
+                <MovementTrendChart compareByMonth={compareByMonth} series={insights.series} />
             </section>
 
             <section className="movement-chart-grid">
@@ -770,11 +821,9 @@ export default function MovementsPage() {
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     const initialMonth = useMemo(() => getInitialMovementMonth(location), []);
-    const [monthFilter, setMonthFilter] = useState(initialMonth);
-    const activeMonthRange = useMemo(
-        () => getMonthRange(monthFilter),
-        [monthFilter]
-    );
+    const [selectedMonths, setSelectedMonths] = useState(initialMonth ? [initialMonth] : []);
+    const hasMonthSelection = selectedMonths.length > 0;
+    const selectedMonthSet = useMemo(() => new Set(selectedMonths), [selectedMonths]);
     const [pageSize, setPageSize] = useState('5');
     const [sortValue, setSortValue] = useState('date-desc');
     const [currentPage, setCurrentPage] = useState(1);
@@ -787,24 +836,11 @@ export default function MovementsPage() {
     const listingQuery = useMemo(
         () =>
             buildMovementApiQuery({
-                start: activeMonthRange.start,
-                end: activeMonthRange.end,
                 page: String(currentPage),
                 pageSize,
                 sort: sortValue
             }),
-        [activeMonthRange.end, activeMonthRange.start, currentPage, pageSize, sortValue]
-    );
-    const insightsQueryString = useMemo(
-        () =>
-            buildMovementApiQuery({
-                start: activeMonthRange.start,
-                end: activeMonthRange.end,
-                page: '1',
-                pageSize: 'all',
-                sort: 'date-asc'
-            }),
-        [activeMonthRange.end, activeMonthRange.start]
+        [currentPage, pageSize, sortValue]
     );
     const monthOptionsQueryString = useMemo(
         () =>
@@ -818,12 +854,8 @@ export default function MovementsPage() {
 
     const movementsQuery = useQuery({
         queryKey: ['movements', listingQuery],
-        queryFn: () => apiFetch(`/api/movements${listingQuery}`)
-    });
-
-    const insightsQuery = useQuery({
-        queryKey: ['movements-insights', insightsQueryString],
-        queryFn: () => apiFetch(`/api/movements${insightsQueryString}`)
+        queryFn: () => apiFetch(`/api/movements${listingQuery}`),
+        enabled: !hasMonthSelection
     });
 
     const monthOptionsQuery = useQuery({
@@ -835,7 +867,6 @@ export default function MovementsPage() {
         mutationFn: id => apiFetch(`/api/movements/${id}`, { method: 'DELETE' }),
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['movements'] });
-            await queryClient.invalidateQueries({ queryKey: ['movements-insights'] });
             await queryClient.invalidateQueries({ queryKey: ['movements-month-options'] });
             showToast('Movimiento eliminado', 'success');
             setPendingDelete(null);
@@ -843,15 +874,36 @@ export default function MovementsPage() {
         onError: error => showToast(error.message, 'danger')
     });
 
-    const payload = movementsQuery.data;
-    const insights = useMemo(
-        () => buildMovementInsights(insightsQuery.data?.data || []),
-        [insightsQuery.data]
-    );
+    const allMovementRows = monthOptionsQuery.data?.data || [];
     const monthOptions = useMemo(
-        () => buildMovementMonthOptions(monthOptionsQuery.data?.data || []),
-        [monthOptionsQuery.data]
+        () => buildMovementMonthOptions(allMovementRows),
+        [allMovementRows]
     );
+    const selectedMovementRows = useMemo(
+        () =>
+            hasMonthSelection
+                ? allMovementRows.filter(row => selectedMonthSet.has(getMonthFromDate(row.date)))
+                : allMovementRows,
+        [allMovementRows, hasMonthSelection, selectedMonthSet]
+    );
+    const localPayload = useMemo(
+        () => buildLocalMovementPayload(selectedMovementRows, currentPage, pageSize, sortValue),
+        [currentPage, pageSize, selectedMovementRows, sortValue]
+    );
+    const payload = hasMonthSelection ? localPayload : movementsQuery.data;
+    const insights = useMemo(
+        () => buildMovementInsights(selectedMovementRows),
+        [selectedMovementRows]
+    );
+    const pageLoading = hasMonthSelection
+        ? monthOptionsQuery.isLoading
+        : movementsQuery.isLoading || monthOptionsQuery.isLoading;
+    const pageError = hasMonthSelection
+        ? monthOptionsQuery.error
+        : movementsQuery.error || monthOptionsQuery.error;
+    const pageIsError = hasMonthSelection
+        ? monthOptionsQuery.isError
+        : movementsQuery.isError || monthOptionsQuery.isError;
 
     useEffect(() => {
         if (payload?.meta && currentPage > payload.meta.totalPages) {
@@ -860,18 +912,32 @@ export default function MovementsPage() {
     }, [currentPage, payload?.meta]);
 
     useEffect(() => {
-        if (!monthFilter || monthOptionsQuery.isLoading || monthOptionsQuery.isError) {
+        if (!selectedMonths.length || monthOptionsQuery.isLoading || monthOptionsQuery.isError) {
             return;
         }
 
-        if (!monthOptions.some(month => month.key === monthFilter)) {
-            setMonthFilter('');
+        const availableMonths = new Set(monthOptions.map(month => month.key));
+        const validMonths = selectedMonths.filter(month => availableMonths.has(month));
+
+        if (validMonths.length !== selectedMonths.length) {
+            setSelectedMonths(validMonths);
             setCurrentPage(1);
         }
-    }, [monthFilter, monthOptions, monthOptionsQuery.isError, monthOptionsQuery.isLoading]);
+    }, [monthOptions, monthOptionsQuery.isError, monthOptionsQuery.isLoading, selectedMonths]);
 
-    const selectMonth = nextMonth => {
-        setMonthFilter(nextMonth);
+    const clearMonthSelection = () => {
+        setSelectedMonths([]);
+        setCurrentPage(1);
+    };
+
+    const toggleMonth = nextMonth => {
+        setSelectedMonths(current => {
+            if (current.includes(nextMonth)) {
+                return current.filter(month => month !== nextMonth);
+            }
+
+            return [...current, nextMonth].sort();
+        });
         setCurrentPage(1);
     };
 
@@ -902,11 +968,11 @@ export default function MovementsPage() {
             </section>
 
             <section className="analytics-chip-panel movement-month-panel">
-                <span className="analytics-chip-panel__label">Mes:</span>
+                <span className="analytics-chip-panel__label">Comparar:</span>
                 <div className="analytics-chip-list">
                     <button
-                        className={`analytics-chip${!monthFilter ? ' analytics-chip--active' : ''}`}
-                        onClick={() => selectMonth('')}
+                        className={`analytics-chip${!hasMonthSelection ? ' analytics-chip--active' : ''}`}
+                        onClick={clearMonthSelection}
                         style={{ '--chip-accent': MOVEMENT_COLORS.balance }}
                         type="button"
                     >
@@ -917,9 +983,9 @@ export default function MovementsPage() {
                         <button
                             key={month.key}
                             className={`analytics-chip${
-                                monthFilter === month.key ? ' analytics-chip--active' : ''
+                                selectedMonthSet.has(month.key) ? ' analytics-chip--active' : ''
                             }`}
-                            onClick={() => selectMonth(month.key)}
+                            onClick={() => toggleMonth(month.key)}
                             style={{ '--chip-accent': month.accent }}
                             type="button"
                         >
@@ -930,25 +996,31 @@ export default function MovementsPage() {
                 </div>
             </section>
 
-            {movementsQuery.isLoading ? (
+            {pageLoading ? (
                 <section className="panel">
                     <p>Cargando movimientos...</p>
                 </section>
-            ) : movementsQuery.isError ? (
+            ) : pageIsError ? (
                 <section className="panel panel--error">
-                    <p>{movementsQuery.error.message}</p>
+                    <p>{pageError.message}</p>
                 </section>
             ) : (
                 <>
                     <MovementInsights
+                        compareByMonth={selectedMonths.length > 1}
+                        comparisonCount={selectedMonths.length}
                         insights={insights}
-                        loading={insightsQuery.isLoading}
-                        error={insightsQuery.isError}
+                        loading={false}
+                        error={false}
                     />
 
                     <CollectionToolbar
                         summary={`${payload.data.length} de ${payload.meta.total} movimientos visibles`}
-                        helperText="El orden y el top se aplican a la tabla de movimientos."
+                        helperText={
+                            hasMonthSelection
+                                ? `${selectedMonths.length} meses seleccionados para comparar.`
+                                : 'El orden y el top se aplican a la tabla de movimientos.'
+                        }
                         sortValue={sortValue}
                         onSortChange={nextSort => updateListing({ sort: nextSort, page: '' })}
                         sortOptions={[
