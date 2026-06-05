@@ -20,12 +20,21 @@ async function ensureUsersSchema() {
     }
 }
 
+function normalizeEmail(email) {
+    return String(email || '').trim().toLowerCase();
+}
+
 async function findUserByEmail(email) {
     await ensureUsersSchema();
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+        return null;
+    }
 
     const [[user]] = await pool.execute(
         'SELECT * FROM users WHERE email = ? LIMIT 1',
-        [email]
+        [normalizedEmail]
     );
     return user;
 }
@@ -102,64 +111,67 @@ exports.showRegister = (req, res) => renderRegister(req, res);
 
 exports.register = async (req, res) => {
     const { username, email, password } = req.body || {};
+    const normalizedUsername = String(username || '').trim();
+    const normalizedEmail = normalizeEmail(email);
 
-    if (!username || !email || !password) {
+    if (!normalizedUsername || !normalizedEmail || !password) {
         return renderRegister(req, res, {
             error: 'Todos los campos son obligatorios.',
-            username: username || '',
-            email: email || ''
+            username: normalizedUsername,
+            email: normalizedEmail
         });
     }
 
     if (password.length < 8) {
         return renderRegister(req, res, {
             error: 'La contrasena debe tener al menos 8 caracteres.',
-            username,
-            email
+            username: normalizedUsername,
+            email: normalizedEmail
         });
     }
 
     try {
-        if (await findUserByEmail(email)) {
+        if (await findUserByEmail(normalizedEmail)) {
             return renderRegister(req, res, {
                 error: 'El correo ya esta registrado.',
-                username,
-                email
+                username: normalizedUsername,
+                email: normalizedEmail
             });
         }
 
         const hash = await bcrypt.hash(password, 12);
-        await createUser(username, email, hash);
+        await createUser(normalizedUsername, normalizedEmail, hash);
         res.redirect('/login');
     } catch (err) {
         console.error(err);
         return renderRegister(req, res, {
             error: 'Error al crear usuario.',
-            username,
-            email
+            username: normalizedUsername,
+            email: normalizedEmail
         });
     }
 };
 
 exports.login = async (req, res) => {
     const { email, password } = req.body || {};
+    const normalizedEmail = normalizeEmail(email);
     const rememberSession =
         req.body?.remember_session === '1' || req.body?.remember_session === 'on';
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
         return renderLogin(req, res, {
             error: 'Ingrese correo y contrasena.',
-            email,
+            email: normalizedEmail,
             rememberSession
         });
     }
 
     try {
-        const user = await findUserByEmail(email);
+        const user = await findUserByEmail(normalizedEmail);
         if (!user || !(await verifyPassword(password, user.password))) {
             return renderLogin(req, res, {
                 error: 'Credenciales invalidas.',
-                email,
+                email: normalizedEmail,
                 rememberSession
             });
         }
@@ -173,7 +185,7 @@ exports.login = async (req, res) => {
                 console.error(err);
                 return renderLogin(req, res, {
                     error: 'Error al iniciar sesion.',
-                    email,
+                    email: normalizedEmail,
                     rememberSession
                 });
             }
@@ -190,7 +202,7 @@ exports.login = async (req, res) => {
         console.error(err);
         return renderLogin(req, res, {
             error: 'Error al iniciar sesion.',
-            email,
+            email: normalizedEmail,
             rememberSession
         });
     }

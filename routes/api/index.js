@@ -78,6 +78,8 @@ const {
 const router = express.Router();
 
 const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 const allowedMimeTypes = new Set([
     'application/pdf',
     'application/vnd.ms-excel',
@@ -160,6 +162,54 @@ function validateSaleDate(soldAt) {
 
     if (parsedSaleDate < minDate || parsedSaleDate > today) {
         return `La fecha de venta debe estar entre ${toIsoDate(minDate)} y ${toIsoDate(today)}`;
+    }
+
+    return '';
+}
+
+function hasBlankValue(value) {
+    return value === undefined || value === null || String(value).trim() === '';
+}
+
+function validateSalePayload(body = {}) {
+    const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
+    const missing = required.find(field => hasBlankValue(body[field]));
+    if (missing) return `Falta el campo ${missing}`;
+
+    if (!Number.isInteger(Number(body.client_id)) || Number(body.client_id) <= 0) {
+        return 'Selecciona un cliente valido';
+    }
+
+    if (!Number.isInteger(Number(body.product_id)) || Number(body.product_id) <= 0) {
+        return 'Selecciona un producto valido';
+    }
+
+    if (!Number.isInteger(Number(body.quantity)) || Number(body.quantity) <= 0) {
+        return 'La cantidad debe ser mayor a cero';
+    }
+
+    if (!Number.isFinite(Number(body.unit_price)) || Number(body.unit_price) <= 0) {
+        return 'El precio unitario debe ser mayor a cero';
+    }
+
+    return validateSaleDate(body.sold_at);
+}
+
+function validateMovementPayload(body = {}) {
+    const required = ['date', 'type', 'amount', 'payment_type', 'category'];
+    const missing = required.find(field => hasBlankValue(body[field]));
+    if (missing) return 'Completa los campos obligatorios';
+
+    if (!['gasto', 'ingreso'].includes(String(body.type))) {
+        return 'El tipo de movimiento no es valido';
+    }
+
+    if (!Number.isFinite(Number(body.amount)) || Number(body.amount) <= 0) {
+        return 'El monto debe ser mayor a cero';
+    }
+
+    if (!parseIsoDate(body.date)) {
+        return 'La fecha del movimiento no es valida';
     }
 
     return '';
@@ -745,12 +795,8 @@ router.post(
     '/sales',
     requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
-        const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
-        const missing = required.find(field => !req.body?.[field]);
-        if (missing) return sendError(res, 400, `Falta el campo ${missing}`);
-
-        const saleDateError = validateSaleDate(req.body.sold_at);
-        if (saleDateError) return sendError(res, 400, saleDateError);
+        const validationError = validateSalePayload(req.body);
+        if (validationError) return sendError(res, 400, validationError);
 
         const sale = await createSale(req.body);
         res.status(201);
@@ -762,12 +808,8 @@ router.put(
     '/sales/:id',
     requireApiRoles('admin'),
     asyncHandler(async (req, res) => {
-        const required = ['client_id', 'product_id', 'quantity', 'unit_price', 'sold_at'];
-        const missing = required.find(field => !req.body?.[field]);
-        if (missing) return sendError(res, 400, `Falta el campo ${missing}`);
-
-        const saleDateError = validateSaleDate(req.body.sold_at);
-        if (saleDateError) return sendError(res, 400, saleDateError);
+        const validationError = validateSalePayload(req.body);
+        if (validationError) return sendError(res, 400, validationError);
 
         const sale = await updateSale(req.params.id, req.body);
         if (!sale) return sendError(res, 404, 'Venta no encontrada');
@@ -820,9 +862,8 @@ router.post(
         const { date, type, amount, payment_type, category, description, account } =
             req.body || {};
 
-        if (!date || !type || !amount || !payment_type || !category) {
-            return sendError(res, 400, 'Completa los campos obligatorios');
-        }
+        const validationError = validateMovementPayload(req.body);
+        if (validationError) return sendError(res, 400, validationError);
 
         if (req.file) {
             const filePath = path.join(uploadsDir, req.file.filename);
@@ -856,9 +897,8 @@ router.put(
         const { date, type, amount, payment_type, category, description, account } =
             req.body || {};
 
-        if (!date || !type || !amount || !payment_type || !category) {
-            return sendError(res, 400, 'Completa los campos obligatorios');
-        }
+        const validationError = validateMovementPayload(req.body);
+        if (validationError) return sendError(res, 400, validationError);
 
         if (req.file) {
             const filePath = path.join(uploadsDir, req.file.filename);

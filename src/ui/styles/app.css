@@ -2653,6 +2653,179 @@ html[data-theme='dark'] .metrics-month-selector__button--active {
         rgba(23, 26, 40, 0.92);
 }
 
+.movement-insights {
+    display: grid;
+    gap: 18px;
+}
+
+.movement-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.movement-panel {
+    padding: 22px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top left, rgba(121, 207, 205, 0.11), transparent 28%),
+        var(--row-surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.movement-panel h3 {
+    margin: 8px 0 0;
+    color: var(--text);
+    font-size: 1.08rem;
+}
+
+.movement-panel__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--tag-text);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.movement-chart-shell {
+    min-width: 0;
+}
+
+.movement-legend-item {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.movement-chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+.movement-bars {
+    display: grid;
+    gap: 14px;
+}
+
+.movement-bar-row {
+    display: grid;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--table-divider);
+}
+
+.movement-bar-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.movement-bar-row__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.movement-bar-row__head strong,
+.movement-bar-row__head b {
+    color: var(--text);
+}
+
+.movement-bar-row__head strong {
+    display: block;
+    font-size: 0.98rem;
+}
+
+.movement-bar-row__head span {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.movement-bar-row__head b {
+    flex: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    text-align: right;
+}
+
+.movement-bar-row__track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(167, 119, 207, 0.09);
+    overflow: hidden;
+}
+
+.movement-bar-row__fill {
+    display: block;
+    height: 100%;
+    min-width: 4px;
+    border-radius: inherit;
+    box-shadow: 0 10px 20px rgba(121, 207, 205, 0.18);
+}
+
+.movement-flow-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.movement-flow-summary__item {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.48);
+    color: var(--muted);
+}
+
+.movement-flow-summary__item svg {
+    color: var(--tag-text);
+}
+
+.movement-flow-summary__item span {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.movement-flow-summary__item strong {
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.movement-flow-summary__item--balance {
+    background:
+        linear-gradient(135deg, rgba(121, 207, 205, 0.14), rgba(167, 119, 207, 0.12)),
+        rgba(255, 255, 255, 0.52);
+}
+
+html[data-theme='dark'] .movement-panel {
+    background:
+        radial-gradient(circle at top left, rgba(121, 207, 205, 0.1), transparent 30%),
+        rgba(23, 26, 40, 0.82);
+}
+
+html[data-theme='dark'] .movement-legend-item,
+html[data-theme='dark'] .movement-flow-summary__item {
+    background: rgba(23, 26, 40, 0.72);
+}
+
+html[data-theme='dark'] .movement-flow-summary__item--balance {
+    background:
+        linear-gradient(135deg, rgba(121, 207, 205, 0.12), rgba(189, 143, 227, 0.12)),
+        rgba(23, 26, 40, 0.82);
+}
+
 @media (max-width: 1100px) {
     .metrics-grid--split {
         grid-template-columns: 1fr;
@@ -2675,6 +2848,11 @@ html[data-theme='dark'] .metrics-month-selector__button--active {
 
     .metrics-month-chips {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .movement-kpi-grid,
+    .movement-chart-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .metrics-panel__header {
@@ -2710,6 +2888,25 @@ html[data-theme='dark'] .metrics-month-selector__button--active {
     .analytics-control {
         width: 100%;
         justify-content: center;
+    }
+
+    .movement-kpi-grid,
+    .movement-chart-grid,
+    .movement-flow-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .movement-panel {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .movement-bar-row__head {
+        display: grid;
+    }
+
+    .movement-bar-row__head b {
+        text-align: left;
     }
 
     .analytics-list-card,

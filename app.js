@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const { randomUUID } = require('crypto');
 const methodOverride = require('method-override');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -9,6 +10,13 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const MySQLStore = require('express-mysql-session')(session);
 const { doubleCsrf } = require('csrf-csrf');
+const { getEnvWarnings, validateEnv } = require('./config/env');
+const { getCsrfTokenFromRequest } = require('./utils/csrfToken');
+
+// --- Validacion de variables de entorno requeridas ---
+const isProduction = process.env.NODE_ENV === 'production';
+validateEnv();
+getEnvWarnings().forEach(message => console.warn(message));
 
 const apiRoutes = require('./routes/api');
 const appRoutes = require('./routes/appRoutes');
@@ -17,26 +25,9 @@ const exportRoutes = require('./routes/exportRoutes');
 
 const app = express();
 
-// --- Validacion de variables de entorno requeridas ---
-function validateEnv() {
-    const required = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-    const missing = required.filter(k => !process.env[k]);
-
-    if (missing.length) {
-        throw new Error(
-            `Faltan variables de entorno requeridas: ${missing.join(', ')}. ` +
-            'Copia .env.example a .env y configura los valores.'
-        );
-    }
-
-    if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
-        throw new Error('SESSION_SECRET es requerido en produccion');
-    }
+if (isProduction) {
+    app.set('trust proxy', 1);
 }
-
-validateEnv();
-
-const isProduction = process.env.NODE_ENV === 'production';
 
 // --- Seguridad: helmet con configuracion adaptada al SPA ---
 app.use(helmet({
@@ -82,12 +73,22 @@ const dbOptions = {
 
 try {
     const sessionStore = new MySQLStore(dbOptions);
-    sessionStore.onReady().catch(() => {
-        console.warn('MySQL session store no disponible, usando MemoryStore');
+    sessionStore.onReady().catch((err) => {
+        const message = `MySQL session store no disponible: ${err.message}`;
+        if (isProduction) {
+            console.error(message);
+            process.exit(1);
+        }
+
+        console.warn(message);
     });
     sessionStore.createDatabaseTable().catch(() => {});
     sessionConfig.store = sessionStore;
-} catch (_err) {
+} catch (err) {
+    if (isProduction) {
+        throw err;
+    }
+
     console.warn('Usando MemoryStore para sesiones (no apto para produccion)');
 }
 
@@ -101,16 +102,9 @@ const {
     doubleCsrfProtection
 } = doubleCsrf({
     getSecret: () => process.env.SESSION_SECRET || 'cambialo_por_un_valor_seguro',
-    getSessionIdentifier: (req) => req.sessionID || req.ip || 'anon',
-    getCsrfTokenFromRequest: (req) => {
-        if (req.is('application/x-www-form-urlencoded') || req.is('multipart/form-data')) {
-            return typeof req.body?._csrf === 'string' ? req.body._csrf : '';
-        }
-
-        const headerToken = req.headers['x-csrf-token'];
-        return typeof headerToken === 'string' ? headerToken : '';
-    },
-    skipCsrfProtection: (req) => !req.path.startsWith('/api/'),
+    getSessionIdentifier: (req) => req.session?.csrfSeed || req.sessionID || req.ip || 'anon',
+    getCsrfTokenFromRequest,
+    skipCsrfProtection: (req) => ['/login', '/register', '/logout'].includes(req.path),
     cookieName: 'x-csrf-token',
     cookieOptions: {
         httpOnly: false,
@@ -123,9 +117,16 @@ const {
 
 app.use(doubleCsrfProtection);
 
+function ensureCsrfSessionSeed(req) {
+    if (req.session && !req.session.csrfSeed) {
+        req.session.csrfSeed = randomUUID();
+    }
+}
+
 app.use((req, res, next) => {
     const isSafeMethod = req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS';
     if (isSafeMethod && req.accepts('html')) {
+        ensureCsrfSessionSeed(req);
         res.locals.csrfToken = req.csrfToken({ overwrite: true });
     }
     next();
@@ -174,7 +175,7 @@ app.use('/uploads', (req, res, next) => {
     next();
 }, express.static(uploadsPath));
 
-// --- Rate limiting en login ---
+// --- Rate limiting en autenticacion ---
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
@@ -184,10 +185,26 @@ const loginLimiter = rateLimit({
     skipSuccessfulRequests: false
 });
 
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Demasiados registros. Intenta de nuevo en 1 hora.',
+    skipSuccessfulRequests: false
+});
+
 // --- Rutas ---
 app.use('/login', (req, res, next) => {
     if (req.method === 'POST') {
         return loginLimiter(req, res, next);
+    }
+
+    return next();
+});
+app.use('/register', (req, res, next) => {
+    if (req.method === 'POST') {
+        return registerLimiter(req, res, next);
     }
 
     return next();
