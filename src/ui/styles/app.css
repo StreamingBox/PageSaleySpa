@@ -2705,8 +2705,90 @@ html[data-theme='dark'] .metrics-month-selector__button--active {
     min-width: 0;
 }
 
+.movement-flow-chart {
+    overflow: visible;
+}
+
+.movement-flow-chart__baseline {
+    stroke: color-mix(in srgb, var(--cyan) 42%, var(--table-divider) 58%);
+    stroke-width: 2;
+}
+
+.movement-flow-chart__bar {
+    opacity: 0.82;
+    transition: opacity var(--transition), transform var(--transition);
+}
+
+.movement-flow-chart__bar--income {
+    fill: var(--success);
+}
+
+.movement-flow-chart__bar--expense {
+    fill: var(--warning);
+}
+
+.movement-flow-chart__balance-line {
+    filter: drop-shadow(0 8px 16px rgba(121, 207, 205, 0.18));
+    stroke: var(--cyan);
+    stroke-width: 4;
+}
+
+.movement-flow-chart__hover-line {
+    stroke: color-mix(in srgb, var(--cyan) 64%, transparent 36%);
+    stroke-dasharray: 5 8;
+    stroke-width: 2;
+}
+
+.movement-flow-chart__balance-point {
+    fill: var(--cyan);
+    filter: drop-shadow(0 8px 14px rgba(121, 207, 205, 0.32));
+    stroke: var(--bg-solid);
+    stroke-width: 4;
+}
+
+.movement-flow-chart__hitbox {
+    cursor: crosshair;
+}
+
+.movement-flow-chart__tooltip-box {
+    fill: var(--bg-solid);
+    filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.18));
+    stroke: var(--border-strong);
+    stroke-width: 1;
+}
+
+.movement-flow-chart__tooltip-date {
+    fill: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.movement-flow-chart__tooltip-label,
+.movement-flow-chart__tooltip-note {
+    fill: var(--muted);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.movement-flow-chart__tooltip-value {
+    fill: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.movement-flow-chart__tooltip-value--danger {
+    fill: var(--danger);
+}
+
 .movement-legend-item {
     background: rgba(255, 255, 255, 0.5);
+}
+
+.movement-legend-item--balance {
+    border-color: color-mix(in srgb, var(--cyan) 42%, var(--border) 58%);
 }
 
 .movement-chart-grid {

@@ -153,14 +153,8 @@ function buildMovementMonthOptions(rows) {
         }));
 }
 
-function buildLinePath(values, maxValue, width, height, tension = 0.22) {
-    if (!values.length) return '';
-    const stepX = values.length > 1 ? width / (values.length - 1) : width;
-    const points = values.map((value, index) => ({
-        x: index * stepX,
-        y: height - (Number(value || 0) / maxValue) * height
-    }));
-
+function buildPointPath(points, tension = 0.2) {
+    if (!points.length) return '';
     if (points.length === 1) {
         return `M ${points[0].x} ${points[0].y}`;
     }
@@ -177,13 +171,6 @@ function buildLinePath(values, maxValue, width, height, tension = 0.22) {
     }
 
     return path;
-}
-
-function buildAreaPath(values, maxValue, width, height) {
-    const linePath = buildLinePath(values, maxValue, width, height);
-    if (!linePath) return '';
-
-    return `${linePath} L ${width} ${height} L 0 ${height} Z`;
 }
 
 function buildMovementInsights(rows) {
@@ -203,7 +190,7 @@ function buildMovementInsights(rows) {
         const paymentKey = String(row.payment_type || 'Sin pago').trim() || 'Sin pago';
 
         if (!days.has(dateKey)) {
-            days.set(dateKey, { date: dateKey, income: 0, expense: 0 });
+            days.set(dateKey, { date: dateKey, income: 0, expense: 0, count: 0 });
         }
 
         if (!categories.has(categoryKey)) {
@@ -229,6 +216,7 @@ function buildMovementInsights(rows) {
         const day = days.get(dateKey);
         const category = categories.get(categoryKey);
         const payment = paymentTypes.get(paymentKey);
+        day.count += 1;
 
         if (isIncome) {
             income += amount;
@@ -260,9 +248,12 @@ function buildMovementInsights(rows) {
         }));
     };
 
-    const series = Array.from(days.values()).sort((left, right) =>
-        String(left.date).localeCompare(String(right.date))
-    );
+    const series = Array.from(days.values())
+        .sort((left, right) => String(left.date).localeCompare(String(right.date)))
+        .map(day => ({
+            ...day,
+            balance: day.income - day.expense
+        }));
 
     const byCategory = addPercentages(
         Array.from(categories.values()).sort((left, right) => right.total - left.total)
@@ -287,15 +278,38 @@ function buildMovementInsights(rows) {
 }
 
 function MovementTrendChart({ series }) {
+    const [activeIndex, setActiveIndex] = useState(null);
     const width = 1120;
-    const height = 320;
-    const plotWidth = width - 72;
-    const plotHeight = height - 24;
+    const height = 360;
+    const plotLeft = 74;
+    const plotRight = 24;
+    const plotTop = 18;
+    const plotHeight = 286;
+    const plotWidth = width - plotLeft - plotRight;
+    const baselineY = plotTop + plotHeight / 2;
     const gridSteps = 4;
-    const incomeValues = series.map(day => day.income);
-    const expenseValues = series.map(day => day.expense);
-    const maxValue = Math.max(...incomeValues, ...expenseValues, 1);
+    const maxMagnitude = Math.max(
+        ...series.flatMap(day => [day.income, day.expense, Math.abs(day.balance)]),
+        1
+    );
+    const bandWidth = plotWidth / Math.max(series.length, 1);
+    const barWidth = Math.min(24, Math.max(7, bandWidth * 0.26));
     const labelStep = Math.max(1, Math.ceil(series.length / 6));
+    const yScale = value => baselineY - (Number(value || 0) / maxMagnitude) * (plotHeight / 2);
+    const points = series.map((day, index) => {
+        const x = plotLeft + bandWidth * index + bandWidth / 2;
+
+        return {
+            ...day,
+            x,
+            incomeY: yScale(day.income),
+            expenseY: yScale(-day.expense),
+            balanceY: yScale(day.balance),
+            hitboxX: plotLeft + bandWidth * index
+        };
+    });
+    const activePoint = activeIndex === null ? null : points[activeIndex];
+    const balancePath = buildPointPath(points.map(point => ({ x: point.x, y: point.balanceY })));
 
     if (!series.length) {
         return <p className="metric-empty">No hay movimientos para graficar en este rango.</p>;
@@ -303,84 +317,70 @@ function MovementTrendChart({ series }) {
 
     return (
         <div className="chart-shell chart-shell--tall movement-chart-shell">
-            <svg className="chart-svg" viewBox={`0 0 ${width} ${height + 58}`} role="img">
+            <svg
+                className="chart-svg movement-flow-chart"
+                viewBox={`0 0 ${width} ${height + 58}`}
+                role="img"
+                onMouseLeave={() => setActiveIndex(null)}
+            >
                 {Array.from({ length: gridSteps + 1 }, (_, index) => {
-                    const y = (plotHeight / gridSteps) * index;
-                    const value = maxValue - (maxValue / gridSteps) * index;
+                    const value = maxMagnitude - (maxMagnitude / gridSteps) * index * 2;
+                    const y = yScale(value);
 
                     return (
                         <g key={index}>
                             <line
-                                className="chart-grid-line"
-                                x1="64"
-                                x2={width}
-                                y1={y + 12}
-                                y2={y + 12}
+                                className={`chart-grid-line${
+                                    value === 0 ? ' movement-flow-chart__baseline' : ''
+                                }`}
+                                x1={plotLeft}
+                                x2={width - plotRight}
+                                y1={y}
+                                y2={y}
                             />
-                            <text className="chart-axis-text" x="0" y={y + 17}>
+                            <text className="chart-axis-text" x="0" y={y + 5}>
                                 {formatCompactMoney(value)}
                             </text>
                         </g>
                     );
                 })}
 
-                <g transform="translate(64 12)">
-                    <path
-                        d={buildAreaPath(incomeValues, maxValue, plotWidth, plotHeight)}
-                        fill={MOVEMENT_COLORS.income}
-                        fillOpacity="0.12"
-                        stroke="none"
-                    />
-                    <path
-                        d={buildAreaPath(expenseValues, maxValue, plotWidth, plotHeight)}
-                        fill={MOVEMENT_COLORS.expense}
-                        fillOpacity="0.12"
-                        stroke="none"
-                    />
-                    <path
-                        d={buildLinePath(incomeValues, maxValue, plotWidth, plotHeight)}
-                        fill="none"
-                        stroke={MOVEMENT_COLORS.income}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="4"
-                    />
-                    <path
-                        d={buildLinePath(expenseValues, maxValue, plotWidth, plotHeight)}
-                        fill="none"
-                        stroke={MOVEMENT_COLORS.expense}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="4"
-                    />
-                    {series.length === 1 ? (
-                        <>
-                            <circle
-                                className="chart-point"
-                                cx="0"
-                                cy={plotHeight - (incomeValues[0] / maxValue) * plotHeight}
-                                fill={MOVEMENT_COLORS.income}
-                                r="6"
+                {points.map(point => (
+                    <g key={point.date}>
+                        {point.income > 0 ? (
+                            <rect
+                                className="movement-flow-chart__bar movement-flow-chart__bar--income"
+                                height={Math.max(2, baselineY - point.incomeY)}
+                                rx="6"
+                                width={barWidth}
+                                x={point.x - barWidth - 3}
+                                y={point.incomeY}
                             />
-                            <circle
-                                className="chart-point"
-                                cx="0"
-                                cy={plotHeight - (expenseValues[0] / maxValue) * plotHeight}
-                                fill={MOVEMENT_COLORS.expense}
-                                r="6"
+                        ) : null}
+                        {point.expense > 0 ? (
+                            <rect
+                                className="movement-flow-chart__bar movement-flow-chart__bar--expense"
+                                height={Math.max(2, point.expenseY - baselineY)}
+                                rx="6"
+                                width={barWidth}
+                                x={point.x + 3}
+                                y={baselineY}
                             />
-                        </>
-                    ) : null}
-                </g>
+                        ) : null}
+                    </g>
+                ))}
 
-                {series.map((day, index) => {
+                <path
+                    className="movement-flow-chart__balance-line"
+                    d={balancePath}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+
+                {points.map((day, index) => {
                     const isVisibleLabel =
                         index === 0 || index === series.length - 1 || index % labelStep === 0;
-                    const x =
-                        64 +
-                        (series.length > 1
-                            ? (plotWidth / (series.length - 1)) * index
-                            : 0);
 
                     return isVisibleLabel ? (
                         <text
@@ -393,13 +393,104 @@ function MovementTrendChart({ series }) {
                                       ? 'end'
                                       : 'middle'
                             }
-                            x={x}
+                            x={day.x}
                             y={height + 42}
                         >
                             {formatShortDate(day.date)}
                         </text>
                     ) : null;
                 })}
+
+                {activePoint ? (
+                    <g className="movement-flow-chart__active" pointerEvents="none">
+                        <line
+                            className="movement-flow-chart__hover-line"
+                            x1={activePoint.x}
+                            x2={activePoint.x}
+                            y1={plotTop}
+                            y2={plotTop + plotHeight}
+                        />
+                        <circle
+                            className="movement-flow-chart__balance-point"
+                            cx={activePoint.x}
+                            cy={activePoint.balanceY}
+                            r="7"
+                        />
+                        {(() => {
+                            const tooltipWidth = 236;
+                            const tooltipHeight = 132;
+                            const tooltipX = Math.min(
+                                width - tooltipWidth - 10,
+                                Math.max(plotLeft, activePoint.x + 16)
+                            );
+                            const tooltipY = Math.min(
+                                plotTop + plotHeight - tooltipHeight,
+                                Math.max(plotTop, activePoint.balanceY - tooltipHeight / 2)
+                            );
+
+                            return (
+                                <g transform={`translate(${tooltipX} ${tooltipY})`}>
+                                    <rect
+                                        className="movement-flow-chart__tooltip-box"
+                                        height={tooltipHeight}
+                                        rx="18"
+                                        width={tooltipWidth}
+                                    />
+                                    <text className="movement-flow-chart__tooltip-date" x="16" y="28">
+                                        {formatDate(activePoint.date)}
+                                    </text>
+                                    <text className="movement-flow-chart__tooltip-label" x="16" y="56">
+                                        Ingresos
+                                    </text>
+                                    <text className="movement-flow-chart__tooltip-value" x="132" y="56">
+                                        {formatMoney(activePoint.income)}
+                                    </text>
+                                    <text className="movement-flow-chart__tooltip-label" x="16" y="78">
+                                        Gastos
+                                    </text>
+                                    <text className="movement-flow-chart__tooltip-value" x="132" y="78">
+                                        {formatMoney(activePoint.expense)}
+                                    </text>
+                                    <text className="movement-flow-chart__tooltip-label" x="16" y="100">
+                                        Balance
+                                    </text>
+                                    <text
+                                        className={`movement-flow-chart__tooltip-value${
+                                            activePoint.balance < 0
+                                                ? ' movement-flow-chart__tooltip-value--danger'
+                                                : ''
+                                        }`}
+                                        x="132"
+                                        y="100"
+                                    >
+                                        {formatMoney(activePoint.balance)}
+                                    </text>
+                                    <text className="movement-flow-chart__tooltip-note" x="16" y="122">
+                                        {activePoint.count} movimientos registrados
+                                    </text>
+                                </g>
+                            );
+                        })()}
+                    </g>
+                ) : null}
+
+                {points.map((point, index) => (
+                    <rect
+                        aria-label={`${formatDate(point.date)}. Ingresos ${formatMoney(point.income)}. Gastos ${formatMoney(point.expense)}. Balance ${formatMoney(point.balance)}.`}
+                        className="movement-flow-chart__hitbox"
+                        fill="transparent"
+                        height={plotHeight}
+                        key={`hitbox-${point.date}`}
+                        onFocus={() => setActiveIndex(index)}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onPointerEnter={() => setActiveIndex(index)}
+                        role="button"
+                        tabIndex="0"
+                        width={bandWidth}
+                        x={point.hitboxX}
+                        y={plotTop}
+                    />
+                ))}
             </svg>
 
             <div className="chart-legend">
@@ -416,6 +507,13 @@ function MovementTrendChart({ series }) {
                         style={{ background: MOVEMENT_COLORS.expense }}
                     />
                     Gastos
+                </span>
+                <span className="chart-legend__item movement-legend-item movement-legend-item--balance">
+                    <span
+                        className="chart-legend__swatch"
+                        style={{ background: MOVEMENT_COLORS.balance }}
+                    />
+                    Balance
                 </span>
             </div>
         </div>
