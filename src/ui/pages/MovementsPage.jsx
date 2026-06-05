@@ -131,18 +131,18 @@ function getMonthAccent(monthKey) {
     return MOVEMENT_MONTH_COLORS[monthIndex % MOVEMENT_MONTH_COLORS.length] || MOVEMENT_MONTH_COLORS[0];
 }
 
-function buildMovementMonthOptions(selectedMonth) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const months = new Set(
-        Array.from({ length: now.getMonth() + 1 }, (_, index) =>
-            `${currentYear}-${String(index + 1).padStart(2, '0')}`
-        )
-    );
+function buildMovementMonthOptions(rows) {
+    const months = new Set();
+    const currentYear = String(new Date().getFullYear());
 
-    if (selectedMonth) {
-        months.add(selectedMonth);
-    }
+    rows.forEach(row => {
+        const month = getMonthFromDate(row.date);
+        const [year] = month.split('-');
+
+        if (month && year === currentYear) {
+            months.add(month);
+        }
+    });
 
     return Array.from(months)
         .sort()
@@ -608,6 +608,15 @@ export default function MovementsPage() {
             }),
         [activeMonthRange.end, activeMonthRange.start]
     );
+    const monthOptionsQueryString = useMemo(
+        () =>
+            buildMovementApiQuery({
+                page: '1',
+                pageSize: 'all',
+                sort: 'date-asc'
+            }),
+        []
+    );
 
     const movementsQuery = useQuery({
         queryKey: ['movements', listingQuery],
@@ -619,11 +628,17 @@ export default function MovementsPage() {
         queryFn: () => apiFetch(`/api/movements${insightsQueryString}`)
     });
 
+    const monthOptionsQuery = useQuery({
+        queryKey: ['movements-month-options', monthOptionsQueryString],
+        queryFn: () => apiFetch(`/api/movements${monthOptionsQueryString}`)
+    });
+
     const deleteMutation = useMutation({
         mutationFn: id => apiFetch(`/api/movements/${id}`, { method: 'DELETE' }),
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['movements'] });
             await queryClient.invalidateQueries({ queryKey: ['movements-insights'] });
+            await queryClient.invalidateQueries({ queryKey: ['movements-month-options'] });
             showToast('Movimiento eliminado', 'success');
             setPendingDelete(null);
         },
@@ -636,8 +651,8 @@ export default function MovementsPage() {
         [insightsQuery.data]
     );
     const monthOptions = useMemo(
-        () => buildMovementMonthOptions(monthFilter),
-        [monthFilter]
+        () => buildMovementMonthOptions(monthOptionsQuery.data?.data || []),
+        [monthOptionsQuery.data]
     );
 
     useEffect(() => {
@@ -645,6 +660,17 @@ export default function MovementsPage() {
             setCurrentPage(payload.meta.totalPages);
         }
     }, [currentPage, payload?.meta]);
+
+    useEffect(() => {
+        if (!monthFilter || monthOptionsQuery.isLoading || monthOptionsQuery.isError) {
+            return;
+        }
+
+        if (!monthOptions.some(month => month.key === monthFilter)) {
+            setMonthFilter('');
+            setCurrentPage(1);
+        }
+    }, [monthFilter, monthOptions, monthOptionsQuery.isError, monthOptionsQuery.isLoading]);
 
     const selectMonth = nextMonth => {
         setMonthFilter(nextMonth);
