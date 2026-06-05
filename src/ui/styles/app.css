@@ -89,6 +89,11 @@ html, body, #app {
     min-height: 100%;
 }
 
+html,
+body {
+    overflow-x: hidden;
+}
+
 body {
     margin: 0;
     color: var(--text);
@@ -155,10 +160,12 @@ textarea {
 
 .app-shell__main {
     min-width: 0;
+    overflow-x: clip;
     padding: 24px;
 }
 
 .app-shell__content {
+    min-width: 0;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -463,6 +470,7 @@ html[data-theme='dark'] .sidebar__link--active {
 .page-stack {
     display: grid;
     gap: 24px;
+    min-width: 0;
 }
 
 .hero,
@@ -2658,6 +2666,10 @@ html[data-theme='dark'] .metrics-month-selector__button--active {
     gap: 18px;
 }
 
+.movement-month-panel {
+    align-items: center;
+}
+
 .movement-kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -2880,6 +2892,15 @@ html[data-theme='dark'] .movement-flow-summary__item--balance {
         grid-template-columns: 1fr;
     }
 
+    .movement-month-panel .analytics-chip-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .movement-month-panel .analytics-chip {
+        justify-content: center;
+    }
+
     .analytics-toggle {
         width: 100%;
     }
@@ -2929,6 +2950,12 @@ html[data-theme='dark'] .movement-flow-summary__item--balance {
 
     .metrics-month-selector__actions {
         flex-direction: column;
+    }
+}
+
+@media (max-width: 460px) {
+    .movement-month-panel .analytics-chip-list {
+        grid-template-columns: 1fr;
     }
 }
 

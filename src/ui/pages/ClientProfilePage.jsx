@@ -334,17 +334,41 @@ export default function ClientProfilePage() {
                         ) : null}
 
                         {isAdmin ? (
-                            <a className="button button--ghost" href={`/sales?client_id=${client.id}`}>
+                            <button
+                                className="button button--ghost"
+                                type="button"
+                                onClick={() =>
+                                    navigate('/sales', {
+                                        state: {
+                                            filters: {
+                                                client_id: String(client.id)
+                                            }
+                                        }
+                                    })
+                                }
+                            >
                                 <ClipboardList size={16} />
                                 Ver ventas
-                            </a>
+                            </button>
                         ) : null}
 
                         {isAdmin ? (
-                            <a className="button button--ghost" href={`/invoices?client_id=${client.id}`}>
+                            <button
+                                className="button button--ghost"
+                                type="button"
+                                onClick={() =>
+                                    navigate('/invoices', {
+                                        state: {
+                                            filters: {
+                                                client_id: String(client.id)
+                                            }
+                                        }
+                                    })
+                                }
+                            >
                                 <FileText size={16} />
                                 Ver cuentas de cobro
-                            </a>
+                            </button>
                         ) : null}
                     </div>
                 </section>

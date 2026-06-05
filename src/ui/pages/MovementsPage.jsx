@@ -15,9 +15,13 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import CollectionToolbar from '../components/CollectionToolbar';
-import { formatDate, formatMoney } from '../lib/format';
+import { formatDate, formatMoney, getMonthFromDate, getMonthRange } from '../lib/format';
+import {
+    cleanVisibleSearch,
+    getRouteStateValues,
+    readQueryValues
+} from '../lib/cleanRouting';
 import DataTable from '../components/DataTable';
-import FilterBar from '../components/FilterBar';
 import EmptyState from '../components/EmptyState';
 import ConfirmDialog from '../components/ConfirmDialog';
 import KpiCard from '../components/KpiCard';
@@ -29,6 +33,21 @@ const MOVEMENT_COLORS = {
     balance: '#5fd1c8',
     category: ['#a777cf', '#79cfcd', '#7db68d', '#d7a56f', '#d84f5f', '#8d84a0']
 };
+const MOVEMENT_MONTH_COLORS = [
+    '#a777cf',
+    '#79cfcd',
+    '#7db68d',
+    '#d7a56f',
+    '#d84f5f',
+    '#c58fcf',
+    '#8d84a0',
+    '#90c9c8',
+    '#cdb3de',
+    '#e4b98f',
+    '#9eb7df',
+    '#c6a46d'
+];
+const MONTH_LABELS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 function buildMovementApiQuery({
     start = '',
@@ -44,16 +63,6 @@ function buildMovementApiQuery({
     if (page) params.set('page', page);
     if (pageSize) params.set('pageSize', pageSize);
     if (sort) params.set('sort', sort);
-
-    const query = params.toString();
-    return query ? `?${query}` : '';
-}
-
-function buildMovementUrlQuery({ start = '', end = '' }) {
-    const params = new URLSearchParams();
-
-    if (start) params.set('start', start);
-    if (end) params.set('end', end);
 
     const query = params.toString();
     return query ? `?${query}` : '';
@@ -83,6 +92,65 @@ function formatShortDate(value) {
     }
 
     return `${day}/${month}`;
+}
+
+function getInitialMovementMonth(location) {
+    const queryValues = readQueryValues(location.search, ['month', 'start', 'end']);
+    const stateValues = getRouteStateValues(location);
+    const month = stateValues.month || queryValues.month || '';
+
+    if (month) {
+        return month;
+    }
+
+    const startMonth = getMonthFromDate(queryValues.start);
+    const endMonth = getMonthFromDate(queryValues.end);
+
+    if (startMonth && (!endMonth || startMonth === endMonth)) {
+        return startMonth;
+    }
+
+    return '';
+}
+
+function getMonthLabel(monthKey) {
+    const [year, month] = String(monthKey || '').split('-');
+    const monthIndex = Number(month) - 1;
+
+    if (!year || monthIndex < 0 || monthIndex >= MONTH_LABELS.length) {
+        return monthKey || '';
+    }
+
+    return `${MONTH_LABELS[monthIndex]} de ${year}`;
+}
+
+function getMonthAccent(monthKey) {
+    const [, month] = String(monthKey || '').split('-');
+    const monthIndex = Math.max(0, Number(month) - 1);
+
+    return MOVEMENT_MONTH_COLORS[monthIndex % MOVEMENT_MONTH_COLORS.length] || MOVEMENT_MONTH_COLORS[0];
+}
+
+function buildMovementMonthOptions(selectedMonth) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const months = new Set(
+        Array.from({ length: now.getMonth() + 1 }, (_, index) =>
+            `${currentYear}-${String(index + 1).padStart(2, '0')}`
+        )
+    );
+
+    if (selectedMonth) {
+        months.add(selectedMonth);
+    }
+
+    return Array.from(months)
+        .sort()
+        .map(key => ({
+            key,
+            label: getMonthLabel(key),
+            accent: getMonthAccent(key)
+        }));
 }
 
 function buildLinePath(values, maxValue, width, height, tension = 0.22) {
@@ -503,57 +571,42 @@ export default function MovementsPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
-    const currentParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    const startFilter = currentParams.get('start') || '';
-    const endFilter = currentParams.get('end') || '';
-    const cleanQuery = useMemo(
-        () => buildMovementUrlQuery({ start: startFilter, end: endFilter }),
-        [endFilter, startFilter]
+    const initialMonth = useMemo(() => getInitialMovementMonth(location), []);
+    const [monthFilter, setMonthFilter] = useState(initialMonth);
+    const activeMonthRange = useMemo(
+        () => getMonthRange(monthFilter),
+        [monthFilter]
     );
     const [pageSize, setPageSize] = useState('5');
     const [sortValue, setSortValue] = useState('date-desc');
     const [currentPage, setCurrentPage] = useState(1);
-    const [draft, setDraft] = useState({
-        start: startFilter,
-        end: endFilter
-    });
     const [pendingDelete, setPendingDelete] = useState(null);
 
     useEffect(() => {
-        if (location.search !== cleanQuery) {
-            navigate(`/movements${cleanQuery}`, { replace: true });
-        }
-    }, [cleanQuery, location.search, navigate]);
-
-    useEffect(() => {
-        setDraft({
-            start: startFilter,
-            end: endFilter
-        });
-        setCurrentPage(1);
-    }, [endFilter, startFilter]);
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
 
     const listingQuery = useMemo(
         () =>
             buildMovementApiQuery({
-                start: startFilter,
-                end: endFilter,
+                start: activeMonthRange.start,
+                end: activeMonthRange.end,
                 page: String(currentPage),
                 pageSize,
                 sort: sortValue
             }),
-        [currentPage, endFilter, pageSize, sortValue, startFilter]
+        [activeMonthRange.end, activeMonthRange.start, currentPage, pageSize, sortValue]
     );
     const insightsQueryString = useMemo(
         () =>
             buildMovementApiQuery({
-                start: startFilter,
-                end: endFilter,
+                start: activeMonthRange.start,
+                end: activeMonthRange.end,
                 page: '1',
                 pageSize: 'all',
                 sort: 'date-asc'
             }),
-        [endFilter, startFilter]
+        [activeMonthRange.end, activeMonthRange.start]
     );
 
     const movementsQuery = useQuery({
@@ -582,6 +635,10 @@ export default function MovementsPage() {
         () => buildMovementInsights(insightsQuery.data?.data || []),
         [insightsQuery.data]
     );
+    const monthOptions = useMemo(
+        () => buildMovementMonthOptions(monthFilter),
+        [monthFilter]
+    );
 
     useEffect(() => {
         if (payload?.meta && currentPage > payload.meta.totalPages) {
@@ -589,15 +646,9 @@ export default function MovementsPage() {
         }
     }, [currentPage, payload?.meta]);
 
-    const applyFilters = () => {
+    const selectMonth = nextMonth => {
+        setMonthFilter(nextMonth);
         setCurrentPage(1);
-        navigate(`/movements${buildMovementUrlQuery({ start: draft.start, end: draft.end })}`);
-    };
-
-    const clearFilters = () => {
-        setDraft({ start: '', end: '' });
-        setCurrentPage(1);
-        navigate('/movements');
     };
 
     const updateListing = overrides => {
@@ -626,50 +677,34 @@ export default function MovementsPage() {
                 </Link>
             </section>
 
-            <form
-                onSubmit={event => {
-                    event.preventDefault();
-                    applyFilters();
-                }}
-            >
-                <FilterBar
-                    actions={
-                        <>
-                            <button className="button button--primary" type="submit">
-                                Filtrar
-                            </button>
-                            <button
-                                className="button button--ghost"
-                                onClick={clearFilters}
-                                type="button"
-                            >
-                                Limpiar
-                            </button>
-                        </>
-                    }
-                >
-                    <label className="field">
-                        <span>Desde</span>
-                        <input
-                            type="date"
-                            value={draft.start}
-                            onChange={event =>
-                                setDraft(current => ({ ...current, start: event.target.value }))
-                            }
-                        />
-                    </label>
-                    <label className="field">
-                        <span>Hasta</span>
-                        <input
-                            type="date"
-                            value={draft.end}
-                            onChange={event =>
-                                setDraft(current => ({ ...current, end: event.target.value }))
-                            }
-                        />
-                    </label>
-                </FilterBar>
-            </form>
+            <section className="analytics-chip-panel movement-month-panel">
+                <span className="analytics-chip-panel__label">Mes:</span>
+                <div className="analytics-chip-list">
+                    <button
+                        className={`analytics-chip${!monthFilter ? ' analytics-chip--active' : ''}`}
+                        onClick={() => selectMonth('')}
+                        style={{ '--chip-accent': MOVEMENT_COLORS.balance }}
+                        type="button"
+                    >
+                        <span className="analytics-chip__dot" />
+                        Todos
+                    </button>
+                    {monthOptions.map(month => (
+                        <button
+                            key={month.key}
+                            className={`analytics-chip${
+                                monthFilter === month.key ? ' analytics-chip--active' : ''
+                            }`}
+                            onClick={() => selectMonth(month.key)}
+                            style={{ '--chip-accent': month.accent }}
+                            type="button"
+                        >
+                            <span className="analytics-chip__dot" />
+                            {month.label}
+                        </button>
+                    ))}
+                </div>
+            </section>
 
             {movementsQuery.isLoading ? (
                 <section className="panel">

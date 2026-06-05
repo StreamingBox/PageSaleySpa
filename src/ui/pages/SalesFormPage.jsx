@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Calculator, FileText, Save } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { buildClientSelectOptions } from '../lib/clientOptions';
@@ -13,6 +13,11 @@ import {
 } from '../lib/format';
 import SearchableSelect from '../components/SearchableSelect';
 import { useToast } from '../components/Toast';
+import {
+    cleanVisibleSearch,
+    getRouteStateValues,
+    readQueryValues
+} from '../lib/cleanRouting';
 
 const emptySale = {
     client_id: '',
@@ -27,13 +32,24 @@ const emptySale = {
 export default function SalesFormPage() {
     const { id } = useParams();
     const isEdit = Boolean(id);
+    const location = useLocation();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
     const { showToast } = useToast();
+    const initialPrefill = useMemo(
+        () => ({
+            ...readQueryValues(location.search, ['client_id', 'product_id', 'sold_at']),
+            ...getRouteStateValues(location, 'prefill')
+        }),
+        []
+    );
     const [form, setForm] = useState(emptySale);
     const [errors, setErrors] = useState({});
     const saleDateMin = saleWindowStartIso();
     const saleDateMax = todayIso();
+
+    useEffect(() => {
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
 
     const clientsQuery = useQuery({
         queryKey: ['clients', 'options', 'sales-form'],
@@ -56,14 +72,14 @@ export default function SalesFormPage() {
             return;
         }
 
-        const clientId = searchParams.get('client_id') || '';
-        const productId = searchParams.get('product_id') || '';
-        const soldAt = searchParams.get('sold_at') || todayIso();
+        const clientId = initialPrefill.client_id || '';
+        const productId = initialPrefill.product_id || '';
+        const soldAt = initialPrefill.sold_at || todayIso();
         const selectedProduct = productsQuery.data.data.find(
             product => String(product.id) === String(productId)
         );
 
-        if (!clientId && !productId && !searchParams.get('sold_at')) {
+        if (!clientId && !productId && !initialPrefill.sold_at) {
             return;
         }
 
@@ -74,7 +90,7 @@ export default function SalesFormPage() {
             unit_price: selectedProduct ? selectedProduct.price : current.unit_price,
             sold_at: soldAt
         }));
-    }, [isEdit, clientsQuery.data, productsQuery.data, searchParams]);
+    }, [isEdit, clientsQuery.data, productsQuery.data, initialPrefill]);
 
     useEffect(() => {
         if (saleQuery.data?.data) {

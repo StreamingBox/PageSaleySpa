@@ -8,9 +8,14 @@ import { applyVisibleLimit, compareDate, compareNumber, compareText } from '../l
 import {
     formatDate,
     formatMoney,
-    getExportUrl,
-    normalizeDashboardFilters
+    getExportUrl
 } from '../lib/format';
+import {
+    cleanVisibleSearch,
+    getRouteStateValues,
+    readQueryValues,
+    serializeInternalParams
+} from '../lib/cleanRouting';
 import CollectionToolbar from '../components/CollectionToolbar';
 import DataTable from '../components/DataTable';
 import FilterBar from '../components/FilterBar';
@@ -37,6 +42,15 @@ const statusOptions = [
     }
 ];
 
+function normalizeSalesFilters(filters = {}) {
+    return {
+        start: filters.start || '',
+        end: filters.end || '',
+        client_id: filters.client_id || '',
+        paid: filters.paid || ''
+    };
+}
+
 function sortSales(rows, sortValue) {
     const sorted = [...rows];
 
@@ -62,20 +76,19 @@ export default function SalesListPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
-    const [draft, setDraft] = useState({
-        start: '',
-        end: '',
-        client_id: '',
-        paid: ''
-    });
+    const initialFilters = useMemo(
+        () =>
+            normalizeSalesFilters({
+                ...readQueryValues(location.search, ['start', 'end', 'client_id', 'paid']),
+                ...getRouteStateValues(location)
+            }),
+        []
+    );
+    const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+    const [draft, setDraft] = useState(initialFilters);
     const [visibleLimit, setVisibleLimit] = useState('5');
     const [sortValue, setSortValue] = useState('date-desc');
     const [pendingDelete, setPendingDelete] = useState(null);
-
-    const salesQuery = useQuery({
-        queryKey: ['sales', location.search],
-        queryFn: () => apiFetch(`/api/sales${location.search}`)
-    });
 
     const clientsQuery = useQuery({
         queryKey: ['clients', 'options'],
@@ -83,16 +96,18 @@ export default function SalesListPage() {
     });
 
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        setDraft(
-            normalizeDashboardFilters({
-                start: params.get('start') || '',
-                end: params.get('end') || '',
-                client_id: params.get('client_id') || '',
-                paid: params.get('paid') || ''
-            })
-        );
-    }, [location.search]);
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
+
+    const salesQueryString = useMemo(
+        () => serializeInternalParams(appliedFilters),
+        [appliedFilters]
+    );
+
+    const salesQuery = useQuery({
+        queryKey: ['sales', salesQueryString],
+        queryFn: () => apiFetch(`/api/sales${salesQueryString}`)
+    });
 
     const clientFilterOptions = useMemo(
         () =>
@@ -222,11 +237,7 @@ export default function SalesListPage() {
             <form
                 onSubmit={event => {
                     event.preventDefault();
-                    const params = new URLSearchParams();
-                    Object.entries(draft).forEach(([key, value]) => {
-                        if (value) params.set(key, value);
-                    });
-                    navigate(`/sales${params.toString() ? `?${params}` : ''}`);
+                    setAppliedFilters(draft);
                 }}
             >
                 <FilterBar
@@ -237,7 +248,11 @@ export default function SalesListPage() {
                             </button>
                             <button
                                 className="button button--ghost"
-                                onClick={() => navigate('/sales')}
+                                onClick={() => {
+                                    const nextFilters = normalizeSalesFilters();
+                                    setDraft(nextFilters);
+                                    setAppliedFilters(nextFilters);
+                                }}
                                 type="button"
                             >
                                 Limpiar

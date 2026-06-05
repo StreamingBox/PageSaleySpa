@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { Pencil, Plus, Search, UserRound } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { applyVisibleLimit, compareText } from '../lib/collections';
@@ -10,6 +10,11 @@ import DrawerForm from '../components/DrawerForm';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import { getSessionUser } from '../lib/navigation';
+import {
+    cleanVisibleSearch,
+    readQueryValues,
+    serializeInternalParams
+} from '../lib/cleanRouting';
 
 const emptyClient = {
     name: '',
@@ -50,11 +55,6 @@ function sortClients(rows, sortValue) {
 export default function ClientsPage() {
     const sessionUser = getSessionUser();
     const isAdmin = sessionUser.role === 'admin';
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [draftSearch, setDraftSearch] = useState(searchParams.get('search') || '');
-    const [visibleLimit, setVisibleLimit] = useState('5');
-    const [sortValue, setSortValue] = useState('name-asc');
-    const [form, setForm] = useState(emptyClient);
     const newMatch = useMatch('/clients/new');
     const editMatch = useMatch('/clients/:hash/edit');
     const selfEditMatch = useMatch('/profile/edit');
@@ -62,11 +62,29 @@ export default function ClientsPage() {
     const location = useLocation();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
+    const initialSearch = useMemo(
+        () => readQueryValues(location.search, ['search']).search,
+        []
+    );
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [draftSearch, setDraftSearch] = useState(initialSearch);
+    const [visibleLimit, setVisibleLimit] = useState('5');
+    const [sortValue, setSortValue] = useState('name-asc');
+    const [form, setForm] = useState(emptyClient);
+
+    useEffect(() => {
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
+
+    const listQueryString = useMemo(
+        () => serializeInternalParams({ search: searchTerm }),
+        [searchTerm]
+    );
 
     const listQuery = useQuery({
-        queryKey: ['clients', location.search],
+        queryKey: ['clients', listQueryString],
         enabled: isAdmin,
-        queryFn: () => apiFetch(`/api/clients${location.search}`)
+        queryFn: () => apiFetch(`/api/clients${listQueryString}`)
     });
 
     const editQuery = useQuery({
@@ -77,10 +95,6 @@ export default function ClientsPage() {
                 ? apiFetch('/api/me/client')
                 : apiFetch(`/api/clients/${editMatch.params.hash}`)
     });
-
-    useEffect(() => {
-        setDraftSearch(searchParams.get('search') || '');
-    }, [searchParams]);
 
     useEffect(() => {
         if (newMatch && isAdmin) {
@@ -123,7 +137,7 @@ export default function ClientsPage() {
                 window.__APP_STATE__.user.username = form.name;
             }
             showToast(selfEditMatch || editMatch ? 'Datos actualizados' : 'Cliente creado', 'success');
-            navigate(selfEditMatch ? '/profile' : `/clients${location.search}`);
+            navigate(selfEditMatch ? '/profile' : '/clients');
         },
         onError: error => {
             showToast(error.message, 'danger');
@@ -205,7 +219,7 @@ export default function ClientsPage() {
                     </button>
                     <button
                         className="table-action"
-                        onClick={() => navigate(`/clients/${row.hash}/edit${location.search}`)}
+                        onClick={() => navigate(`/clients/${row.hash}/edit`)}
                         type="button"
                     >
                         <Pencil size={14} />
@@ -218,7 +232,7 @@ export default function ClientsPage() {
 
     const submitSearch = event => {
         event.preventDefault();
-        setSearchParams(draftSearch ? { search: draftSearch } : {});
+        setSearchTerm(draftSearch.trim());
     };
 
     const isDrawerOpen = Boolean((isAdmin && (newMatch || editMatch)) || selfEditMatch);
@@ -378,7 +392,7 @@ export default function ClientsPage() {
                 title={editMatch ? 'Editar cliente' : 'Nuevo cliente'}
                 description="Actualiza los datos sin salir del listado."
                 placement="centered"
-                onClose={() => navigate(`/clients${location.search}`)}
+                onClose={() => navigate('/clients')}
             >
                 <form
                     className="stack-form"

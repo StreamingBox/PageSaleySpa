@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Plus, Search } from 'lucide-react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { buildClientSelectOptions } from '../lib/clientOptions';
 import { applyVisibleLimit, compareDate, compareNumber, compareText } from '../lib/collections';
@@ -11,6 +11,12 @@ import {
     getInvoicePdfUrl,
     normalizeInvoiceFilters
 } from '../lib/format';
+import {
+    cleanVisibleSearch,
+    getRouteStateValues,
+    readQueryValues,
+    serializeInternalParams
+} from '../lib/cleanRouting';
 import CollectionToolbar from '../components/CollectionToolbar';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DataTable from '../components/DataTable';
@@ -68,21 +74,30 @@ function sortInvoices(rows, sortValue) {
 }
 
 export default function InvoicesPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
     const location = useLocation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
-    const [draft, setDraft] = useState(normalizeInvoiceFilters({}));
+    const initialFilters = useMemo(
+        () =>
+            normalizeInvoiceFilters({
+                ...readQueryValues(location.search, [
+                    'start',
+                    'end',
+                    'client_id',
+                    'status',
+                    'search'
+                ]),
+                ...getRouteStateValues(location)
+            }),
+        []
+    );
+    const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+    const [draft, setDraft] = useState(initialFilters);
     const [visibleLimit, setVisibleLimit] = useState('5');
     const [sortValue, setSortValue] = useState('date-desc');
     const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
-
-    const invoicesQuery = useQuery({
-        queryKey: ['invoices', location.search],
-        queryFn: () => apiFetch(`/api/invoices${location.search}`)
-    });
 
     const clientsQuery = useQuery({
         queryKey: ['clients', 'invoice-options'],
@@ -90,16 +105,18 @@ export default function InvoicesPage() {
     });
 
     useEffect(() => {
-        setDraft(
-            normalizeInvoiceFilters({
-                start: searchParams.get('start') || '',
-                end: searchParams.get('end') || '',
-                client_id: searchParams.get('client_id') || '',
-                status: searchParams.get('status') || '',
-                search: searchParams.get('search') || ''
-            })
-        );
-    }, [searchParams]);
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
+
+    const invoicesQueryString = useMemo(
+        () => serializeInternalParams(appliedFilters),
+        [appliedFilters]
+    );
+
+    const invoicesQuery = useQuery({
+        queryKey: ['invoices', invoicesQueryString],
+        queryFn: () => apiFetch(`/api/invoices${invoicesQueryString}`)
+    });
 
     const clientOptions = useMemo(
         () =>
@@ -181,11 +198,7 @@ export default function InvoicesPage() {
 
     const submitFilters = event => {
         event.preventDefault();
-        setSearchParams(
-            Object.fromEntries(
-                Object.entries(draft).filter(([, value]) => String(value || '').trim())
-            )
-        );
+        setAppliedFilters(normalizeInvoiceFilters(draft));
     };
 
     const toggleInvoiceSelection = invoiceId => {
@@ -316,7 +329,11 @@ export default function InvoicesPage() {
                             </button>
                             <button
                                 className="button button--ghost"
-                                onClick={() => navigate('/invoices')}
+                                onClick={() => {
+                                    const nextFilters = normalizeInvoiceFilters();
+                                    setDraft(nextFilters);
+                                    setAppliedFilters(nextFilters);
+                                }}
                                 type="button"
                             >
                                 Limpiar

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { Pencil, Plus, Search } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { applyVisibleLimit, compareNumber, compareText } from '../lib/collections';
@@ -10,6 +10,11 @@ import DataTable from '../components/DataTable';
 import DrawerForm from '../components/DrawerForm';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
+import {
+    cleanVisibleSearch,
+    readQueryValues,
+    serializeInternalParams
+} from '../lib/cleanRouting';
 
 const emptyProduct = {
     name: '',
@@ -34,21 +39,34 @@ function sortProducts(rows, sortValue) {
 }
 
 export default function ProductsPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [draftSearch, setDraftSearch] = useState(searchParams.get('search') || '');
-    const [visibleLimit, setVisibleLimit] = useState('5');
-    const [sortValue, setSortValue] = useState('name-asc');
-    const [form, setForm] = useState(emptyProduct);
     const newMatch = useMatch('/products/new');
     const editMatch = useMatch('/products/:hash/edit');
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
+    const initialSearch = useMemo(
+        () => readQueryValues(location.search, ['search']).search,
+        []
+    );
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [draftSearch, setDraftSearch] = useState(initialSearch);
+    const [visibleLimit, setVisibleLimit] = useState('5');
+    const [sortValue, setSortValue] = useState('name-asc');
+    const [form, setForm] = useState(emptyProduct);
+
+    useEffect(() => {
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
+
+    const listQueryString = useMemo(
+        () => serializeInternalParams({ search: searchTerm }),
+        [searchTerm]
+    );
 
     const listQuery = useQuery({
-        queryKey: ['products', location.search],
-        queryFn: () => apiFetch(`/api/products${location.search}`)
+        queryKey: ['products', listQueryString],
+        queryFn: () => apiFetch(`/api/products${listQueryString}`)
     });
 
     const editQuery = useQuery({
@@ -56,10 +74,6 @@ export default function ProductsPage() {
         enabled: Boolean(editMatch?.params.hash),
         queryFn: () => apiFetch(`/api/products/${editMatch.params.hash}`)
     });
-
-    useEffect(() => {
-        setDraftSearch(searchParams.get('search') || '');
-    }, [searchParams]);
 
     useEffect(() => {
         if (newMatch) {
@@ -99,7 +113,7 @@ export default function ProductsPage() {
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['products'] });
             showToast(editMatch ? 'Producto actualizado' : 'Producto creado', 'success');
-            navigate(`/products${location.search}`);
+            navigate('/products');
         },
         onError: error => showToast(error.message, 'danger')
     });
@@ -123,7 +137,7 @@ export default function ProductsPage() {
             render: row => (
                 <button
                     className="table-action"
-                    onClick={() => navigate(`/products/${row.hash}/edit${location.search}`)}
+                    onClick={() => navigate(`/products/${row.hash}/edit`)}
                     type="button"
                 >
                     <Pencil size={14} />
@@ -140,7 +154,7 @@ export default function ProductsPage() {
                     className="search-bar"
                     onSubmit={event => {
                         event.preventDefault();
-                        setSearchParams(draftSearch ? { search: draftSearch } : {});
+                        setSearchTerm(draftSearch.trim());
                     }}
                 >
                     <Search size={16} />
@@ -201,7 +215,7 @@ export default function ProductsPage() {
                 open={Boolean(newMatch || editMatch)}
                 title={editMatch ? 'Editar producto' : 'Nuevo producto'}
                 description="Actualiza catálogo y precios sin cambiar de contexto."
-                onClose={() => navigate(`/products${location.search}`)}
+                onClose={() => navigate('/products')}
             >
                 <form
                     className="stack-form"

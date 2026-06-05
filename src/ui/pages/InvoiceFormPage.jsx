@@ -1,13 +1,18 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckSquare, FileText, Save } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { buildClientSelectOptions } from '../lib/clientOptions';
 import { formatDate, formatMoney, todayIso } from '../lib/format';
 import EmptyState from '../components/EmptyState';
 import SearchableSelect from '../components/SearchableSelect';
 import { useToast } from '../components/Toast';
+import {
+    cleanVisibleSearch,
+    getRouteStateValues,
+    readQueryValues
+} from '../lib/cleanRouting';
 
 const emptyForm = {
     client_id: '',
@@ -16,16 +21,28 @@ const emptyForm = {
 };
 
 export default function InvoiceFormPage() {
-    const [searchParams] = useSearchParams();
-    const initialClientId = searchParams.get('client_id') || '';
-    const shouldAutoSelectAll = searchParams.get('select_all') === '1';
+    const location = useLocation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
+    const initialPrefill = useMemo(
+        () => ({
+            ...readQueryValues(location.search, ['client_id', 'select_all']),
+            ...getRouteStateValues(location, 'prefill')
+        }),
+        []
+    );
+    const initialClientId = initialPrefill.client_id || '';
+    const shouldAutoSelectAll =
+        initialPrefill.select_all === true || initialPrefill.select_all === '1';
     const [form, setForm] = useState({
         ...emptyForm,
         client_id: initialClientId
     });
+
+    useEffect(() => {
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
 
     const clientsQuery = useQuery({
         queryKey: ['clients', 'invoice-create'],

@@ -20,6 +20,12 @@ import {
     getExportUrl,
     normalizeDashboardFilters
 } from '../lib/format';
+import {
+    cleanVisibleSearch,
+    getRouteStateValues,
+    readQueryValues,
+    serializeInternalParams
+} from '../lib/cleanRouting';
 import DrawerForm from '../components/DrawerForm';
 import EmptyState from '../components/EmptyState';
 import FilterBar from '../components/FilterBar';
@@ -66,26 +72,52 @@ function buildWhatsappUrl(phone, name) {
     return `https://wa.me/${whatsappPhone}?text=${message}`;
 }
 
-function buildInvoiceCreateUrl(clientId) {
-    return `/invoices/new?client_id=${clientId}&select_all=1`;
+function buildInvoicePrefill(clientId) {
+    return {
+        prefill: {
+            client_id: String(clientId || ''),
+            select_all: true
+        }
+    };
+}
+
+function buildClientFilterState(clientId) {
+    return {
+        filters: {
+            client_id: String(clientId || '')
+        }
+    };
 }
 
 export default function DashboardPage() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [draft, setDraft] = useState({
-        start: '',
-        end: '',
-        client_id: '',
-        paid: ''
-    });
+    const initialFilters = useMemo(
+        () =>
+            normalizeDashboardFilters({
+                ...readQueryValues(location.search, ['start', 'end', 'client_id', 'paid']),
+                ...getRouteStateValues(location)
+            }),
+        []
+    );
+    const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+    const [draft, setDraft] = useState(initialFilters);
     const [debtSort, setDebtSort] = useState('desc');
     const [debtLimit, setDebtLimit] = useState('5');
     const [activeClient, setActiveClient] = useState(null);
 
+    useEffect(() => {
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
+
+    const dashboardQueryString = useMemo(
+        () => serializeInternalParams(appliedFilters),
+        [appliedFilters]
+    );
+
     const dashboardQuery = useQuery({
-        queryKey: ['dashboard', location.search],
-        queryFn: () => apiFetch(`/api/dashboard${location.search}`)
+        queryKey: ['dashboard', dashboardQueryString],
+        queryFn: () => apiFetch(`/api/dashboard${dashboardQueryString}`)
     });
     const clientDetailQuery = useQuery({
         queryKey: ['dashboard-client', activeClient?.hash],
@@ -94,7 +126,7 @@ export default function DashboardPage() {
     });
 
     const payload = dashboardQuery.data?.data;
-    const filters = normalizeDashboardFilters(payload?.filters);
+    const filters = normalizeDashboardFilters(payload?.filters || appliedFilters);
 
     useEffect(() => {
         setDraft(filters);
@@ -112,13 +144,7 @@ export default function DashboardPage() {
 
     const submitFilters = event => {
         event.preventDefault();
-        const params = new URLSearchParams();
-
-        Object.entries(draft).forEach(([key, value]) => {
-            if (value) params.set(key, value);
-        });
-
-        navigate(params.toString() ? `/?${params}` : '/');
+        setAppliedFilters(draft);
     };
 
     if (dashboardQuery.isLoading) {
@@ -154,12 +180,12 @@ export default function DashboardPage() {
         selectedClient?.phone,
         selectedClient?.name
     );
-    const selectedClientSalesUrl = selectedClient?.id
-        ? `/sales?client_id=${selectedClient.id}`
-        : '/sales';
-    const selectedClientInvoiceUrl = selectedClient?.id
-        ? buildInvoiceCreateUrl(selectedClient.id)
-        : '/invoices/new';
+    const selectedClientSalesState = selectedClient?.id
+        ? buildClientFilterState(selectedClient.id)
+        : null;
+    const selectedClientInvoiceState = selectedClient?.id
+        ? buildInvoicePrefill(selectedClient.id)
+        : null;
 
     return (
         <>
@@ -376,7 +402,9 @@ export default function DashboardPage() {
                                                     className="table-action"
                                                     type="button"
                                                     onClick={() =>
-                                                        navigate(buildInvoiceCreateUrl(item.id))
+                                                        navigate('/invoices/new', {
+                                                            state: buildInvoicePrefill(item.id)
+                                                        })
                                                     }
                                                 >
                                                     <FileText size={14} />
@@ -458,20 +486,29 @@ export default function DashboardPage() {
                             <button
                                 className="button button--ghost"
                                 type="button"
-                                onClick={() => navigate(selectedClientInvoiceUrl)}
+                                onClick={() =>
+                                    navigate('/invoices/new', {
+                                        state: selectedClientInvoiceState || null
+                                    })
+                                }
                             >
                                 <FileText size={16} />
                                 Generar cuenta de cobro
                             </button>
 
-                            <a
+                            <button
                                 className="button button--ghost"
-                                href={selectedClientSalesUrl}
-                                onClick={() => setActiveClient(null)}
+                                type="button"
+                                onClick={() => {
+                                    setActiveClient(null);
+                                    navigate('/sales', {
+                                        state: selectedClientSalesState || null
+                                    });
+                                }}
                             >
                                 <ArrowRight size={16} />
                                 Ver ventas
-                            </a>
+                            </button>
                         </div>
 
                         <div className="client-detail__meta">

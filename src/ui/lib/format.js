@@ -1,4 +1,4 @@
-import { addDays, format, parseISO, startOfMonth, subDays } from 'date-fns';
+import { addDays, endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -37,6 +37,27 @@ export function todayIso() {
 
 export function startOfMonthIso() {
     return format(startOfMonth(new Date()), 'yyyy-MM-dd');
+}
+
+export function currentMonthIso() {
+    return format(new Date(), 'yyyy-MM');
+}
+
+export function getMonthRange(monthValue) {
+    if (!monthValue) {
+        return { start: '', end: '' };
+    }
+
+    const monthDate = parseISO(`${monthValue}-01`);
+
+    return {
+        start: format(startOfMonth(monthDate), 'yyyy-MM-dd'),
+        end: format(endOfMonth(monthDate), 'yyyy-MM-dd')
+    };
+}
+
+export function getMonthFromDate(value) {
+    return value ? String(value).slice(0, 7) : '';
 }
 
 export function daysAgoIso(days) {

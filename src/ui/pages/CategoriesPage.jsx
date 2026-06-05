@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { applyVisibleLimit, compareText } from '../lib/collections';
@@ -10,6 +10,11 @@ import DrawerForm from '../components/DrawerForm';
 import EmptyState from '../components/EmptyState';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../components/Toast';
+import {
+    cleanVisibleSearch,
+    readQueryValues,
+    serializeInternalParams
+} from '../lib/cleanRouting';
 
 const emptyCategory = { name: '' };
 
@@ -26,22 +31,35 @@ function sortCategories(rows, sortValue) {
 }
 
 export default function CategoriesPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [draftSearch, setDraftSearch] = useState(searchParams.get('search') || '');
-    const [visibleLimit, setVisibleLimit] = useState('5');
-    const [sortValue, setSortValue] = useState('name-asc');
-    const [form, setForm] = useState(emptyCategory);
-    const [pendingDelete, setPendingDelete] = useState(null);
     const newMatch = useMatch('/categories/new');
     const editMatch = useMatch('/categories/:id/edit');
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
+    const initialSearch = useMemo(
+        () => readQueryValues(location.search, ['search']).search,
+        []
+    );
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [draftSearch, setDraftSearch] = useState(initialSearch);
+    const [visibleLimit, setVisibleLimit] = useState('5');
+    const [sortValue, setSortValue] = useState('name-asc');
+    const [form, setForm] = useState(emptyCategory);
+    const [pendingDelete, setPendingDelete] = useState(null);
+
+    useEffect(() => {
+        cleanVisibleSearch(location, navigate);
+    }, [location, navigate]);
+
+    const listQueryString = useMemo(
+        () => serializeInternalParams({ search: searchTerm }),
+        [searchTerm]
+    );
 
     const listQuery = useQuery({
-        queryKey: ['categories', location.search],
-        queryFn: () => apiFetch(`/api/categories${location.search}`)
+        queryKey: ['categories', listQueryString],
+        queryFn: () => apiFetch(`/api/categories${listQueryString}`)
     });
 
     const editQuery = useQuery({
@@ -49,10 +67,6 @@ export default function CategoriesPage() {
         enabled: Boolean(editMatch?.params.id),
         queryFn: () => apiFetch(`/api/categories/${editMatch.params.id}`)
     });
-
-    useEffect(() => {
-        setDraftSearch(searchParams.get('search') || '');
-    }, [searchParams]);
 
     useEffect(() => {
         if (newMatch) {
@@ -84,7 +98,7 @@ export default function CategoriesPage() {
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['categories'] });
             showToast(editMatch ? 'Categoría actualizada' : 'Categoría creada', 'success');
-            navigate(`/categories${location.search}`);
+            navigate('/categories');
         },
         onError: error => showToast(error.message, 'danger')
     });
@@ -106,7 +120,7 @@ export default function CategoriesPage() {
                     className="search-bar"
                     onSubmit={event => {
                         event.preventDefault();
-                        setSearchParams(draftSearch ? { search: draftSearch } : {});
+                        setSearchTerm(draftSearch.trim());
                     }}
                 >
                     <Search size={16} />
@@ -159,9 +173,7 @@ export default function CategoriesPage() {
                                 <div className="table-action-group">
                                     <button
                                         className="table-action"
-                                        onClick={() =>
-                                            navigate(`/categories/${row.id}/edit${location.search}`)
-                                        }
+                                        onClick={() => navigate(`/categories/${row.id}/edit`)}
                                         type="button"
                                     >
                                         <Pencil size={14} />
@@ -194,7 +206,7 @@ export default function CategoriesPage() {
                 open={Boolean(newMatch || editMatch)}
                 title={editMatch ? 'Editar categoría' : 'Nueva categoría'}
                 description="Mantén organizado el catálogo contable del negocio."
-                onClose={() => navigate(`/categories${location.search}`)}
+                onClose={() => navigate('/categories')}
             >
                 <form
                     className="stack-form"

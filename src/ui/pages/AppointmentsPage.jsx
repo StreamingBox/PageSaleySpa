@@ -295,13 +295,15 @@ function AdminAppointmentsPage() {
             showToast('Cita confirmada. Continúa con el registro de venta.', 'success');
 
             if (appointment) {
-                const params = new URLSearchParams({
-                    client_id: String(appointment.client_id),
-                    product_id: String(appointment.product_id),
-                    sold_at: appointment.appointment_date
+                navigate('/sales/new', {
+                    state: {
+                        prefill: {
+                            client_id: String(appointment.client_id),
+                            product_id: String(appointment.product_id),
+                            sold_at: appointment.appointment_date
+                        }
+                    }
                 });
-
-                navigate(`/sales/new?${params.toString()}`);
             }
         },
         onError: error => showToast(error.message, 'danger')
