@@ -277,26 +277,124 @@ function buildMovementInsights(rows) {
     };
 }
 
+function buildChartPeriods(series) {
+    if (series.length > 120) {
+        const months = new Map();
+
+        series.forEach(day => {
+            const key = getMonthFromDate(day.date);
+
+            if (!key) return;
+
+            if (!months.has(key)) {
+                months.set(key, {
+                    key,
+                    label: getMonthLabel(key).replace(' de ', ' '),
+                    title: getMonthLabel(key),
+                    income: 0,
+                    expense: 0,
+                    count: 0
+                });
+            }
+
+            const month = months.get(key);
+            month.income += day.income;
+            month.expense += day.expense;
+            month.count += day.count;
+        });
+
+        return Array.from(months.values()).map(period => ({
+            ...period,
+            balance: period.income - period.expense
+        }));
+    }
+
+    if (series.length > 45) {
+        const weeks = [];
+
+        for (let index = 0; index < series.length; index += 7) {
+            const chunk = series.slice(index, index + 7);
+            const start = chunk[0];
+            const end = chunk[chunk.length - 1];
+            const income = chunk.reduce((sum, day) => sum + day.income, 0);
+            const expense = chunk.reduce((sum, day) => sum + day.expense, 0);
+            const count = chunk.reduce((sum, day) => sum + day.count, 0);
+
+            weeks.push({
+                key: `${start.date}-${end.date}`,
+                label:
+                    start.date === end.date
+                        ? formatShortDate(start.date)
+                        : `${formatShortDate(start.date)} - ${formatShortDate(end.date)}`,
+                title:
+                    start.date === end.date
+                        ? formatDate(start.date)
+                        : `${formatDate(start.date)} - ${formatDate(end.date)}`,
+                income,
+                expense,
+                count,
+                balance: income - expense
+            });
+        }
+
+        return weeks;
+    }
+
+    return series.map(day => ({
+        key: day.date,
+        label: formatShortDate(day.date),
+        title: formatDate(day.date),
+        income: day.income,
+        expense: day.expense,
+        count: day.count,
+        balance: day.balance
+    }));
+}
+
+function buildChartTicks(maxValue, minValue) {
+    if (maxValue > 0 && minValue < 0) {
+        return [maxValue, maxValue / 2, 0, minValue / 2, minValue];
+    }
+
+    if (maxValue > 0) {
+        return [maxValue, maxValue / 2, 0];
+    }
+
+    if (minValue < 0) {
+        return [0, minValue / 2, minValue];
+    }
+
+    return [1, 0];
+}
+
 function MovementTrendChart({ series }) {
     const [activeIndex, setActiveIndex] = useState(null);
     const width = 1120;
-    const height = 360;
+    const height = 342;
     const plotLeft = 74;
     const plotRight = 24;
     const plotTop = 18;
-    const plotHeight = 286;
+    const plotHeight = 270;
     const plotWidth = width - plotLeft - plotRight;
-    const baselineY = plotTop + plotHeight / 2;
-    const gridSteps = 4;
-    const maxMagnitude = Math.max(
-        ...series.flatMap(day => [day.income, day.expense, Math.abs(day.balance)]),
-        1
+    const periods = buildChartPeriods(series);
+    const maxValue = Math.max(
+        ...periods.flatMap(day => [day.income, day.balance > 0 ? day.balance : 0]),
+        0
     );
-    const bandWidth = plotWidth / Math.max(series.length, 1);
-    const barWidth = Math.min(24, Math.max(7, bandWidth * 0.26));
-    const labelStep = Math.max(1, Math.ceil(series.length / 6));
-    const yScale = value => baselineY - (Number(value || 0) / maxMagnitude) * (plotHeight / 2);
-    const points = series.map((day, index) => {
+    const minValue = Math.min(
+        ...periods.flatMap(day => [-day.expense, day.balance < 0 ? day.balance : 0]),
+        0
+    );
+    const domainMax = maxValue || Math.abs(minValue) || 1;
+    const domainMin = minValue || 0;
+    const domainSpan = domainMax - domainMin || 1;
+    const baselineY = plotTop + ((domainMax - 0) / domainSpan) * plotHeight;
+    const ticks = buildChartTicks(domainMax, domainMin);
+    const bandWidth = plotWidth / Math.max(periods.length, 1);
+    const barWidth = Math.min(30, Math.max(9, bandWidth * 0.3));
+    const labelStep = Math.max(1, Math.ceil(periods.length / 6));
+    const yScale = value => plotTop + ((domainMax - Number(value || 0)) / domainSpan) * plotHeight;
+    const points = periods.map((day, index) => {
         const x = plotLeft + bandWidth * index + bandWidth / 2;
 
         return {
@@ -323,12 +421,11 @@ function MovementTrendChart({ series }) {
                 role="img"
                 onMouseLeave={() => setActiveIndex(null)}
             >
-                {Array.from({ length: gridSteps + 1 }, (_, index) => {
-                    const value = maxMagnitude - (maxMagnitude / gridSteps) * index * 2;
+                {ticks.map(value => {
                     const y = yScale(value);
 
                     return (
-                        <g key={index}>
+                        <g key={value}>
                             <line
                                 className={`chart-grid-line${
                                     value === 0 ? ' movement-flow-chart__baseline' : ''
@@ -346,7 +443,7 @@ function MovementTrendChart({ series }) {
                 })}
 
                 {points.map(point => (
-                    <g key={point.date}>
+                    <g key={point.key}>
                         {point.income > 0 ? (
                             <rect
                                 className="movement-flow-chart__bar movement-flow-chart__bar--income"
@@ -380,23 +477,26 @@ function MovementTrendChart({ series }) {
 
                 {points.map((day, index) => {
                     const isVisibleLabel =
-                        index === 0 || index === series.length - 1 || index % labelStep === 0;
+                        index === 0 ||
+                        index === periods.length - 1 ||
+                        (index % labelStep === 0 &&
+                            index < periods.length - 1 - Math.floor(labelStep / 2));
 
                     return isVisibleLabel ? (
                         <text
-                            key={`${day.date}-${index}`}
+                            key={`${day.key}-${index}`}
                             className="chart-axis-value"
                             textAnchor={
                                 index === 0
                                     ? 'start'
-                                    : index === series.length - 1
+                                    : index === periods.length - 1
                                       ? 'end'
                                       : 'middle'
                             }
                             x={day.x}
                             y={height + 42}
                         >
-                            {formatShortDate(day.date)}
+                            {day.label}
                         </text>
                     ) : null;
                 })}
@@ -437,7 +537,7 @@ function MovementTrendChart({ series }) {
                                         width={tooltipWidth}
                                     />
                                     <text className="movement-flow-chart__tooltip-date" x="16" y="28">
-                                        {formatDate(activePoint.date)}
+                                        {activePoint.title}
                                     </text>
                                     <text className="movement-flow-chart__tooltip-label" x="16" y="56">
                                         Ingresos
@@ -476,11 +576,11 @@ function MovementTrendChart({ series }) {
 
                 {points.map((point, index) => (
                     <rect
-                        aria-label={`${formatDate(point.date)}. Ingresos ${formatMoney(point.income)}. Gastos ${formatMoney(point.expense)}. Balance ${formatMoney(point.balance)}.`}
+                        aria-label={`${point.title}. Ingresos ${formatMoney(point.income)}. Gastos ${formatMoney(point.expense)}. Balance ${formatMoney(point.balance)}.`}
                         className="movement-flow-chart__hitbox"
                         fill="transparent"
                         height={plotHeight}
-                        key={`hitbox-${point.date}`}
+                        key={`hitbox-${point.key}`}
                         onFocus={() => setActiveIndex(index)}
                         onMouseEnter={() => setActiveIndex(index)}
                         onPointerEnter={() => setActiveIndex(index)}
